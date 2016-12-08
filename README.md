@@ -1,6 +1,6 @@
 # Landscape Metrics (LSMetrics)
 
-This repository is being used to develop and share LSMetrics software.
+This repository is being used to develop and share LSMetrics package.
 
 LSMetrics is a software designed to calculate ecologically based landscape metrics and landscape statistics, as well as generate maps of landscape connectivity.
 Also, the software is designed to prepare maps and enviroment for running BioDIM, an individual-based model of animal movement in fragmented landscapes.
