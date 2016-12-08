@@ -8,7 +8,7 @@ The software runs in a GRASS GIS (currently GRASS GIS 7.0.x) environment and use
 
 To use it, first download the .zip package or clone it into your local enviroment:
 ```bash
-git clone https://github.com/JohnWRRC/PROGRAMA_LS_CONECTIVITY.git
+git clone https://github.com/LEEClab/LS_METRICS.git
 ```
 
 Open GRASS GIS and load or create your project location. If you do not know how to configure a project in GRASS, take a look [here](https://grass.osgeo.org/grass70/manuals/helptext.html). 
