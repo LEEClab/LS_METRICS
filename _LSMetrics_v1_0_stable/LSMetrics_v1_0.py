@@ -1,24 +1,22 @@
 #!/c/Python25 python
 #---------------------------------------------------------------------------------------
 """
- LS Connectivity - LandScape Connectivity Calculator
- Version 0.9
+ LSMetrics - Ecologically Scaled Landscape Metrics
+ Version 1.0
  
+ Milton C. Ribeiro - mcr@rc.unesp.br
  John W. Ribeiro - jw.ribeiro.rc@gmail.com
  Bernardo B. S. Niebuhr - bernardo_brandaum@yahoo.com.br
- Milton C. Ribeiro - mcr@rc.unesp.br
  
  Laboratorio de Ecologia Espacial e Conservacao
  Universidade Estadual Paulista - UNESP
  Rio Claro - SP - Brasil
  
- LS Connectivity is a software designed to calculate landscape metrics and
+ LSMetrics is a software designed to calculate landscape metrics and
  landscape statistics and generate maps of landscape connectivity.
  Also, the software is designed to prepare maps and enviroment for running 
  BioDIM, an individual-based model of animal movement in fragmented landscapes.
  The software runs in a GRASS GIS environment and uses raster images as input.
- 
- Aqui podemos colocar mais comentarios sobre o funcionamento do LS Con...
 """
 #---------------------------------------------------------------------------------------
 
@@ -162,7 +160,7 @@ def selectdirectory():
     return dialog.GetPath()
 
 
-def createBinarios_single(ListMapBins):
+def createBinarios_single(ListMapBins, prepareBIODIM):
   """
   This function reclassify an input map into a binary map, according to reclassification rules passed by
   a text file
@@ -171,13 +169,13 @@ def createBinarios_single(ListMapBins):
   grass.run_command('g.region',rast=ListMapBins)
   grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
   
-  if self.prepareBIODIM:
-    self.speciesList=grass.list_grouped ('rast', pattern='(*)') ['userbase']
+  if prepareBIODIM:
+    speciesList=grass.list_grouped ('rast', pattern='(*)') ['userbase']
   else:
-    self.speciesList=grass.list_grouped ('rast', pattern='(*)') ['PERMANENT']  
+    speciesList=grass.list_grouped ('rast', pattern='(*)') ['PERMANENT']  
   return readtxt
   
-def createBinarios(ListMapBins):
+def createBinarios(ListMapBins, prepareBIODIM):
   """
   This function reclassify a series of input maps into binary maps, according to reclassification rules passed by
   a text file
@@ -186,13 +184,13 @@ def createBinarios(ListMapBins):
   for i in ListMapBins:
     grass.run_command('g.region',rast=i)
     grass.run_command('r.reclass',input=i,output=i+'_HABMAT',rules=readtxt, overwrite = True)
-    if self.prepareBIODIM:
-      self.speciesList=grass.list_grouped ('rast', pattern='(*)') ['userbase']
+    if prepareBIODIM:
+      speciesList=grass.list_grouped ('rast', pattern='(*)') ['userbase']
     else:
-      self.speciesList=grass.list_grouped ('rast', pattern='(*)') ['PERMANENT']    
+      speciesList=grass.list_grouped ('rast', pattern='(*)') ['current_mapset']    
     return readtxt
   
-def create_habmat_single(ListMapBins_in, prefix,list_habitat_classes):
+def create_habmat_single(ListMapBins_in, prefix, list_habitat_classes, prepareBIODIM, calcStatistics, dirout):
   
   """
   Function for a single map
@@ -209,11 +207,11 @@ def create_habmat_single(ListMapBins_in, prefix,list_habitat_classes):
   #grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
   
   # opcao 2: definir quais classes sao habitat; todas as outras serao matriz
-  if(len(self.list_habitat_classes) > 0):
+  if(len(list_habitat_classes) > 0):
     
     conditional = ''
     cc = 0
-    for j in self.list_habitat_classes:
+    for j in list_habitat_classes:
       if cc > 0:
         conditional = conditional+' || '
       conditional = conditional+ListMapBins_in+' == '+j
@@ -226,24 +224,24 @@ def create_habmat_single(ListMapBins_in, prefix,list_habitat_classes):
   else:
     print 'You did not type which class is habitat!! Map not generated' # organizar para dar um erro; pode ser com try except 
     
-  if self.prepareBIODIM:
-    create_TXTinputBIODIM([ListMapBins+'_HABMAT'], "simulados_HABMAT", self.dirout)   
+  if prepareBIODIM:
+    create_TXTinputBIODIM([ListMapBins+'_HABMAT'], "simulados_HABMAT", dirout)   
   else:
     grass.run_command('g.region', rast=ListMapBins+'_HABMAT')
     grass.run_command('r.out.gdal', input=ListMapBins+'_HABMAT', out=ListMapBins+'_HABMAT.tif',overwrite = True)
   
-  if self.calcStatistics:
-    createtxt(ListMapBins+'_HABMAT', self.dirout, ListMapBins+'_HABMAT')
+  if calcStatistics:
+    createtxt(ListMapBins+'_HABMAT', dirout, ListMapBins+'_HABMAT')
 
 
-def create_habmat(ListMapBins, prefix = ''):
+def create_habmat(ListMapBins, list_habitat_classes, prepareBIODIM, calcStatistics, dirout, prefix = ''):
   """
   Function for a series of maps
   This function reclassify an input map into a binary map, according to reclassification rules passed by
   a text file
   """
   
-  if self.prepareBIODIM:
+  if prepareBIODIM:
     lista_maps_habmat=[]  
   
   # opcao 1: ler um arquivo e fazer reclass
@@ -268,10 +266,10 @@ def create_habmat(ListMapBins, prefix = ''):
       else: 
         pre_numb = `cont`+'_'
     
-    if(len(self.list_habitat_classes) > 0):
+    if(len(list_habitat_classes) > 0):
       conditional = ''
       cc = 0
-      for j in self.list_habitat_classes:
+      for j in list_habitat_classes:
         if cc > 0:
           conditional = conditional+' || '
         conditional = conditional+i_in+' == '+j
@@ -286,21 +284,21 @@ def create_habmat(ListMapBins, prefix = ''):
     else:
       print 'You did not type which class is habitat!! Map not generated' # organizar para dar um erro; pode ser com try except 
     
-    if self.prepareBIODIM:
+    if prepareBIODIM:
       lista_maps_habmat.append(i+'_HABMAT') 
     else:
       grass.run_command('g.region', rast=i+'_HABMAT')
       grass.run_command('r.out.gdal', input=i+'_HABMAT', out=i+'_HABMAT.tif',overwrite = True)
   
-    if self.calcStatistics:
-      createtxt(i+'_HABMAT', self.dirout, i+'_HABMAT')
+    if calcStatistics:
+      createtxt(i+'_HABMAT', dirout, i+'_HABMAT')
       
     cont += 1
       
-  if self.prepareBIODIM:
-    create_TXTinputBIODIM(lista_maps_habmat, "simulados_HABMAT", self.dirout)  
+  if prepareBIODIM:
+    create_TXTinputBIODIM(lista_maps_habmat, "simulados_HABMAT", dirout)  
     
-def rulesreclass(mapa,dirs):
+def rulesreclass(mapa, dirs):
   """
   This function sets the rules for area reclassification for patch ID, using stats -a for each patch.
   The output is a text file with such rules
@@ -349,10 +347,6 @@ def exportPNG(mapinp=[]):
 #----------------------------------------------------------------------------------
 # Leading with scales - organization
  
-############
-# JOHN, as funcoes escala con e escala frag sao realmente diferentes?
-# sao sim Ber, depois te explico melhor como funciona
-
 def escala_con(mapa,esc):
   """
   This function separates the input for functional connectivity maps (CON), separatins scales (distances)
@@ -415,7 +409,7 @@ def areaFragSingle(map_HABITAT_Single, prefix,list_esc_areaFrag,dirout,prepareBI
   Function for a single map
   This function fragments patches (FRAG), excluding corridors and edges given input scales (distances), and:
   - generates and exports maps with Patch ID and Area of each "fragmented" patch
-  - generatics statistics - Area per patch (if self.calcStatistics == True)
+  - generatics statistics - Area per patch (if calcStatistics == True)
   """
   
   ListmapsFrag = prefix+map_HABITAT_Single
@@ -529,7 +523,7 @@ def areaFrag(ListmapsFrag, prefix,list_esc_areaFrag,dirout,prepareBIODIM,calcSta
   Function for a series of maps
   This function fragments patches (FRAG), excluding corridors and edges given input scales (distances), and:
   - generates and exports maps with Patch ID and Area of each "fragmented" patch
-  - generatics statistics - Area per patch (if self.calcStatistics == True)
+  - generatics statistics - Area per patch (if calcStatistics == True)
   """
 
   if prepareBIODIM:
@@ -687,7 +681,7 @@ def patchSingle(Listmapspatch_in, prefix,dirout,prepareBIODIM,calcStatistics,rem
   This function calculates area per patch in a map (PATCH), considering structural connectivity 
   (no fragmentation or dilatation):
   - generates and exports maps with Patch ID and Area of each patch
-  - generatics statistics - Area per patch (if self.calcStatistics == True)
+  - generatics statistics - Area per patch (if calcStatistics == True)
   """
   
   Listmapspatch = prefix+Listmapspatch_in
@@ -729,7 +723,7 @@ def Patch(Listmapspatch_in, prefix,dirout,prepareBIODIM,calcStatistics,removeTra
   This function calculates area per patch in a map (PATCH), considering structural connectivity 
   (no fragmentation or dilatation):
   - generates and exports maps with Patch ID and Area of each patch
-  - generatics statistics - Area per patch (if self.calcStatistics == True)
+  - generatics statistics - Area per patch (if calcStatistics == True)
   """
   
   if prepareBIODIM:
@@ -805,7 +799,7 @@ def areaconSingle(mapHABITAT_Single, prefix,escala_frag_con,dirout,prepareBIODIM
   This function calculates functional patch area in a map (CON), considering functional connectivity 
   (dilatation of edges given input scales/distances), and:
   - generates and exports maps with Patch ID and Area of each patch
-  - generatics statistics - Area per patch (if self.calcStatistics == True)
+  - generatics statistics - Area per patch (if calcStatistics == True)
   """
   
   Listmapspatch = prefix+mapHABITAT_Single
@@ -866,7 +860,7 @@ def areacon(Listmapspatch, prefix,escala_frag_con,dirout,prepareBIODIM,calcStati
   This function calculates functional patch area in a map (CON), considering functional connectivity 
   (dilatation of edges given input scales/distances), and:
   - generates and exports maps with Patch ID and Area of each patch
-  - generatics statistics - Area per patch (if self.calcStatistics == True)
+  - generatics statistics - Area per patch (if calcStatistics == True)
   """
   
   if prepareBIODIM:
@@ -974,7 +968,7 @@ def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix,calcStatistics,rem
   Function for a single map
   This function separates habitat area into edge and interior/core regions, given a scale/distance defined as edge, and:
   - generates and exports maps with each region
-  - generatics statistics - Area per region (matrix/edge/core) (if self.calcStatistics == True)
+  - generatics statistics - Area per region (matrix/edge/core) (if calcStatistics == True)
   """  
   os.chdir(dirs)
   ListmapsED = prefix+ListmapsED_in
@@ -1049,7 +1043,7 @@ def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash,e
   Function for a series of maps
   This function separates habitat area into edge and interior/core regions, given a scale/distance defined as edge, and:
   - generates and exports maps with each region
-  - generatics statistics - Area per region (matrix/edge/core) (if self.calcStatistics == True)
+  - generatics statistics - Area per region (matrix/edge/core) (if calcStatistics == True)
   """
   
   cont = 1
@@ -1385,9 +1379,12 @@ def percentage_edge():
 
 # GUI
 
-class LS_connectivity(wx.Panel):
+class LSMetrics(wx.Panel):
     def __init__(self, parent, id):
         wx.Panel.__init__(self, parent, id)
+        
+        # Takes the current mapset and looks for maps only inside it
+        self.current_mapset = grass.read_command('g.mapset', flags = 'p').replace('\n','').replace('\r','')        
         
         #variavels_______________________________________
         self.mapa_entrada=''
@@ -1446,7 +1443,7 @@ class LS_connectivity(wx.Panel):
         if self.prepareBIODIM: 
           self.speciesList=grass.list_grouped ('rast') ['userbase']
         else:
-          self.speciesList=grass.list_grouped ('rast') ['PERMANENT']
+          self.speciesList=grass.list_grouped ('rast') [self.current_mapset]
         
         #____________________________________________________________________________
         self.species_profile=self.speciesList[0] 
@@ -1698,7 +1695,8 @@ class LS_connectivity(wx.Panel):
             if self.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
               
-              create_habmat_single(self.mapa_entrada,self.output_prefix2,self.list_habitat_classes)
+              create_habmat_single(self.mapa_entrada, self.output_prefix2, self.list_habitat_classes, prepareBIODIM=self.prepareBIODIM, 
+                                   calcStatistics=self.calcStatistics, dirout=self.dirout)
             if self.Patch==True:   
               
               patchSingle(self.mapa_entrada, self.output_prefix2, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash)
@@ -1730,7 +1728,8 @@ class LS_connectivity(wx.Panel):
               
             if self.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
-              create_habmat(self.ListMapsGroupCalc, prefix = self.output_prefix2)            
+              create_habmat(self.ListMapsGroupCalc, list_habitat_classes=self.list_habitat_classes, 
+                            prepareBIODIM=self.prepareBIODIM, calcStatistics=self.calcStatistics, prefix = self.output_prefix2)            
             
              
             
@@ -1939,7 +1938,7 @@ class LS_connectivity(wx.Panel):
 if __name__ == "__main__":
     app = wx.PySimpleApp()
     frame = wx.Frame(None, -1, " ", size=(400,600))
-    LS_connectivity(frame,-1)
+    LSMetrics(frame,-1)
     frame.Show(1)
     
     app.MainLoop()
