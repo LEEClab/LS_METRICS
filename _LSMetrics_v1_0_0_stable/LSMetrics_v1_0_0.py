@@ -1541,14 +1541,14 @@ class LSMetrics(wx.Panel):
       
         # Calculate metrics for a single or multiple maps?
         self.single_multiple_maps = ['Single', 'Multiple']
-        rb = wx.RadioBox(self, 92, "Single or multiple maps?", wx.Point(20, 112), wx.DefaultSize,
+        rb = wx.RadioBox(self, 92, "Single or multiple maps?", wx.Point(20, 117), wx.DefaultSize,
                          self.single_multiple_maps, 2, wx.RA_SPECIFY_ROWS)
         wx.EVT_RADIOBOX(self, 92, self.EvtRadioBox)
       
       
         # Prepare files and maps for running BioDIM individual-based model?
         self.BioDimChoice = ['No', 'Yes']
-        rb = wx.RadioBox(self, 905, "Prepare maps for BioDIM?", wx.Point(20, 190), wx.DefaultSize,
+        rb = wx.RadioBox(self, 905, "Prepare maps for BioDIM?", wx.Point(20, 195), wx.DefaultSize,
                          self.BioDimChoice, 2, wx.RA_SPECIFY_COLS)
         wx.EVT_RADIOBOX(self, 905, self.EvtRadioBox)                   
         
@@ -1562,7 +1562,7 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics = wx.StaticText(self,-1,"Regular Expression:", wx.Point(165 + self.add_width, 165))    
   
         self.SelectMetrics = wx.StaticText(self,-1,"Create habitat map:", wx.Point(20, 260)) # Ou binary map?
-        self.SelectMetrics = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(140 + self.add_width, 260))
+        self.SelectMetrics = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(150 + self.add_width, 260))
       
         self.SelectMetrics = wx.StaticText(self,-1,"Fragment- and patch-based metrics:", wx.Point(20, 290))
         self.SelectMetrics = wx.StaticText(self,-1,"Connectivity map:", wx.Point(20, 320))
@@ -1669,14 +1669,14 @@ class LSMetrics(wx.Panel):
         # Regular expression for selecting multiple maps
         self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(300 + self.add_width, 160), wx.Size(120,-1))
         self.editname1.Disable()
+        # List of codes that represent habitat, for generating binary class maps
+        self.editname5 = wx.TextCtrl(self, 193, '', wx.Point(290 + self.add_width, 260), wx.Size(80,-1))        
         # List of gap crossing capability
         self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(250 + self.add_width, 273), wx.Size(80,-1))
         # List of edge depths
         self.editname3 = wx.TextCtrl(self, 192, '', wx.Point(250 + self.add_width, 305), wx.Size(80,-1))
         # List of extents for percentage maps
         self.editname4 = wx.TextCtrl(self, 194, '', wx.Point(283 + self.add_width, 341), wx.Size(80,-1))
-        # List of codes that represent habitat, for generating binary class maps
-        self.editname5 = wx.TextCtrl(self, 193, '', wx.Point(250 + self.add_width, 242), wx.Size(80,-1))
         # List of radii on influence for calculating landscape diversity/heterogeneity
         self.editname6 = wx.TextCtrl(self, 195, '', wx.Point(250 + self.add_width, 395), wx.Size(80,-1))
         
