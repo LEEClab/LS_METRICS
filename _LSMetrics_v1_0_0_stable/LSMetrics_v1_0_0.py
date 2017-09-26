@@ -1598,7 +1598,7 @@ class LSMetrics(wx.Panel):
         except: # If there are no maps loaded
           self.chosen_map = ''
       
-        self.editmapsList = wx.ComboBox(self, 93, self.chosen_map, wx.Point(165 + self.add_width, 130), wx.Size(250, -1),
+        self.editmapsList = wx.ComboBox(self, 93, self.chosen_map, wx.Point(165 + self.add_width, 130), wx.Size(260, -1),
                                         self.mapsList, wx.CB_DROPDOWN)
         wx.EVT_COMBOBOX(self, 93, self.EvtComboBox)
         wx.EVT_TEXT(self, 93, self.EvtText)        
@@ -1667,7 +1667,7 @@ class LSMetrics(wx.Panel):
         # Include fast description
         
         # Regular expression for selecting multiple maps
-        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(310 + self.add_width, 160), wx.Size(120,-1))
+        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(300 + self.add_width, 160), wx.Size(120,-1))
         self.editname1.Disable()
         # List of gap crossing capability
         self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(250 + self.add_width, 273), wx.Size(80,-1))
