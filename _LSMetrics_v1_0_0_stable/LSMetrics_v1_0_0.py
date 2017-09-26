@@ -1541,7 +1541,7 @@ class LSMetrics(wx.Panel):
       
         # Calculate metrics for a single or multiple maps?
         self.single_multiple_maps = ['Single', 'Multiple']
-        rb = wx.RadioBox(self, 92, "Calculate metrics for a \nsingle or multiple maps?", wx.Point(20, 102), wx.DefaultSize,
+        rb = wx.RadioBox(self, 92, "Single or multiple maps?", wx.Point(20, 112), wx.DefaultSize,
                          self.single_multiple_maps, 2, wx.RA_SPECIFY_ROWS)
         wx.EVT_RADIOBOX(self, 92, self.EvtRadioBox)
       
@@ -1557,7 +1557,7 @@ class LSMetrics(wx.Panel):
         #---------------------------------------------#          
         
         # TEXT FOR OPTIONS
-        self.SelectMap = wx.StaticText(self, -1, "Select input map:", wx.Point(250, 102))
+        self.SelectMap = wx.StaticText(self, -1, "Select input map:", wx.Point(250, 112))
         
         self.SelectMetrics = wx.StaticText(self,-1,"Regular Expression:", wx.Point(200, 165))    
   
@@ -1614,7 +1614,7 @@ class LSMetrics(wx.Panel):
         #self.insure = wx.CheckBox(self, 95, "AH Frag.", wx.Point(143,150))
         #wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)
         
-        self.insure = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 265)) # Criando mapa de habitat botaozainho self.Habmat
+        self.insure = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 260)) # Criando mapa de habitat botaozainho self.Habmat
         wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)           
       
         self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 320)) # area con connectivity
