@@ -1,0 +1,22 @@
+acima do connectivity
+
+fragment size e edge depth
+
+structural connectivity
+
+funcionatl connecvity
+
+percentage habitat extent
+
+percentage edge/core extent depth
+
+opcao classificar considerando as edges depths acima
+
+continuar igual
+
+coluna export para cada opção
+
+
+opcao diversity - r.stats e ter pelo menos 3 classes...
+ok!
+se tiver so duas classes, fazer um warning para o usuario

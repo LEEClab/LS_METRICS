@@ -121,7 +121,7 @@ def createtxt(mapa, dirs, outname=False):
   """
   x=grass.read_command('r.stats',flags='a',input=mapa)
   
-  y=x.split('\n')
+  y=x.split('\n') # \r tb?
   os.chdir(dirs)
   if outname:
     txtsaida=outname+'.txt'

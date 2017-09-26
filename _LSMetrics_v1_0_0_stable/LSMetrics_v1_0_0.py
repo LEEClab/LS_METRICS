@@ -180,7 +180,8 @@ def createtxt(mapa, dirs, outname=False):
 # Auxiliary functions
 
 def selectdirectory():
-  dialog = wx.DirDialog(None, "Select the folder where the output files will be saved:",style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+  dialog = wx.DirDialog(None, "Select the folder where the output files will be saved:",
+                        style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
   if dialog.ShowModal() == wx.ID_OK:
     #print ">>..................",dialog.GetPath()
     return dialog.GetPath()
