@@ -1561,11 +1561,12 @@ class LSMetrics(wx.Panel):
         
         self.SelectMetrics = wx.StaticText(self,-1,"Regular Expression:", wx.Point(200, 165))    
   
-        self.SelectMetrics = wx.StaticText(self,-1,"Create habitat map:", wx.Point(20, 250))
-        self.SelectMetrics = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(140, 250))
+        self.SelectMetrics = wx.StaticText(self,-1,"Create habitat map:", wx.Point(20, 260)) # Ou binary map?
+        self.SelectMetrics = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(140 + self.add_width, 260))
       
-        self.SelectMetrics = wx.StaticText(self,-1,"Connectivity map:", wx.Point(20, 280))
-        self.SelectMetrics = wx.StaticText(self,-1,"Gap crossing list (m):", wx.Point(140, 280))
+        self.SelectMetrics = wx.StaticText(self,-1,"Fragment- and patch-based metrics:", wx.Point(20, 290))
+        self.SelectMetrics = wx.StaticText(self,-1,"Connectivity map:", wx.Point(20, 320))
+        self.SelectMetrics = wx.StaticText(self,-1,"Gap crossing list (m):", wx.Point(140, 320))
       
         self.SelectMetrics = wx.StaticText(self,-1,"Core/Edge map:", wx.Point(20, 308))
         self.SelectMetrics = wx.StaticText(self,-1,"Edge depth list (m):", wx.Point(140, 308))
@@ -1592,7 +1593,10 @@ class LSMetrics(wx.Panel):
         #---------------------------------------------#        
       
         # Maps shown when selecting a single map to calculate metrics
-        self.chosen_map = self.mapsList[0]
+        try: # Try to select the first map of the list of maps loaded in the GRASS GIS location
+          self.chosen_map = self.mapsList[0]
+        except: # If there are no maps loaded
+          self.chosen_map = ''
       
         self.editmapsList = wx.ComboBox(self, 93, self.chosen_map, wx.Point(100 + self.add_width, 130), wx.Size(280, -1),
                                         self.mapsList, wx.CB_DROPDOWN)
@@ -1608,9 +1612,12 @@ class LSMetrics(wx.Panel):
         #wx.EVT_CHECKBOX(self, 96,   self.EvtCheckBox)     
       
         #self.insure = wx.CheckBox(self, 95, "AH Frag.", wx.Point(143,150))
-        #wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)   
+        #wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)
+        
+        self.insure = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 265)) # Criando mapa de habitat botaozainho self.Habmat
+        wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)           
       
-        self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 280)) # area con connectivity
+        self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 320)) # area con connectivity
         wx.EVT_CHECKBOX(self, 97,   self.EvtCheckBox)  
       
         self.insure = wx.CheckBox(self, 150, "", wx.Point(120, 308)) #EDGE/Core
@@ -1628,11 +1635,7 @@ class LSMetrics(wx.Panel):
         wx.EVT_CHECKBOX(self, 99,   self.EvtCheckBox)  
       
       
-        #"""
-        #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de habitat
-        #"""
-        self.insure = wx.CheckBox(self, 100, "", wx.Point(120, 250)) # Criando mapa de habitat botaozainho self.Habmat
-        wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)   
+        
       
         """
               essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de diveridade de shannon
