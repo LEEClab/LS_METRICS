@@ -1494,7 +1494,7 @@ class LSMetrics(wx.Panel):
         if CURRENT_OS == "Windows":
           self.add_width = 0
         elif CURRENT_OS == "Linux":
-          self.add_width = 100
+          self.add_width = 50
         # MAC?
         else:
           self.add_width = 0
@@ -1548,7 +1548,7 @@ class LSMetrics(wx.Panel):
       
         # Prepare files and maps for running BioDIM individual-based model?
         self.BioDimChoice = ['No', 'Yes']
-        rb = wx.RadioBox(self, 905, "Prepare maps for BioDIM?", wx.Point(20, 200), wx.DefaultSize,
+        rb = wx.RadioBox(self, 905, "Prepare maps for BioDIM?", wx.Point(20, 190), wx.DefaultSize,
                          self.BioDimChoice, 2, wx.RA_SPECIFY_COLS)
         wx.EVT_RADIOBOX(self, 905, self.EvtRadioBox)                   
         
@@ -1559,7 +1559,7 @@ class LSMetrics(wx.Panel):
         # TEXT FOR OPTIONS
         self.SelectMap = wx.StaticText(self, -1, "Select input map:", wx.Point(250, 112))
         
-        self.SelectMetrics = wx.StaticText(self,-1,"Regular Expression:", wx.Point(200, 165))    
+        self.SelectMetrics = wx.StaticText(self,-1,"Regular Expression:", wx.Point(165 + self.add_width, 165))    
   
         self.SelectMetrics = wx.StaticText(self,-1,"Create habitat map:", wx.Point(20, 260)) # Ou binary map?
         self.SelectMetrics = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(140 + self.add_width, 260))
@@ -1598,7 +1598,7 @@ class LSMetrics(wx.Panel):
         except: # If there are no maps loaded
           self.chosen_map = ''
       
-        self.editmapsList = wx.ComboBox(self, 93, self.chosen_map, wx.Point(100 + self.add_width, 130), wx.Size(280, -1),
+        self.editmapsList = wx.ComboBox(self, 93, self.chosen_map, wx.Point(165 + self.add_width, 130), wx.Size(250, -1),
                                         self.mapsList, wx.CB_DROPDOWN)
         wx.EVT_COMBOBOX(self, 93, self.EvtComboBox)
         wx.EVT_TEXT(self, 93, self.EvtText)        
@@ -1667,7 +1667,7 @@ class LSMetrics(wx.Panel):
         # Include fast description
         
         # Regular expression for selecting multiple maps
-        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(240 + self.add_width, 160), wx.Size(100,-1))
+        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(310 + self.add_width, 160), wx.Size(120,-1))
         self.editname1.Disable()
         # List of gap crossing capability
         self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(250 + self.add_width, 273), wx.Size(80,-1))
