@@ -1599,10 +1599,12 @@ def lsmetrics_run(input_maps,
                                                            prefix = output_prefix, add_counter_name = add_counter_name,
                                                            export = export_patch_size, export_pid = export_patch_id, dirout = outputdir)
   
-  # tem que checar aqui o que fazer se struc_connec = True e ele nao pede pra calcular o patch size
-  
   # Fragment size
-  if calc_frag_size:  
+  if calc_frag_size:
+    
+    # Checking whether patch size was calculated
+    if calc_patch_size == False and struc_connec:
+      raise Exeption('To calculate structural connectivity, you need to also calculate patch size.')
     
     fragment_area(input_maps = list_maps_metrics, list_edge_depths = list_edge_depth_frag,
                   zero = zero_metrics, diagonal = diagonal,
@@ -1798,7 +1800,7 @@ class LSMetrics(wx.Panel):
         wx.StaticBitmap(self, -1, jpg1, (20, 470), (jpg1.GetWidth(), jpg1.GetHeight()), style=wx.SUNKEN_BORDER)
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
-        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 470), wx.Size(300 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
+        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 470), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
         
         #---------------------------------------------#
         #-------------- RADIO BOXES ------------------#
@@ -1863,14 +1865,14 @@ class LSMetrics(wx.Panel):
         # Static text
         self.SelectMetrics1 = wx.StaticText(self, -1, "Codes for habitat:", wx.Point(165 + self.add_width, 250))
         
-        # Text Control - event 193
+        # Text Control - event 191
         # List of codes that represent habitat, for generating binary class maps
-        self.editname2 = wx.TextCtrl(self, 193, '', wx.Point(300 + self.add_width, 248), wx.Size(120,-1)) 
-        wx.EVT_TEXT(self, 193, self.EvtText)
+        self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(300 + self.add_width, 248), wx.Size(120,-1)) 
+        wx.EVT_TEXT(self, 191, self.EvtText)
         self.editname2.Disable()
         
         # Static text
-        self.export_text = wx.StaticText(self, -1, "Export?", wx.Point(450 + self.add_width, 215))
+        self.export_text1 = wx.StaticText(self, -1, "Export?", wx.Point(450 + self.add_width, 215))
         
         # Check Box - event 51 (export binary maps)
         self.insure2 = wx.CheckBox(self, 51, "", wx.Point(465 + self.add_width, 248))
@@ -1889,19 +1891,89 @@ class LSMetrics(wx.Panel):
         # Static text
         self.SelectMetrics2 = wx.StaticText(self, -1, "Metrics of structural connectivity:", wx.Point(20, 310))
         
+        #------------
+        # Patch size
+        
         # Static text
         self.SelectMetrics3 = wx.StaticText(self, -1, "Patch size map:", wx.Point(20, 340))
         
         # Check box - event 101 (check calculate patch size)
         self.insure4 = wx.CheckBox(self, 101, '', wx.Point(120 + self.add_width, 338))
-        wx.EVT_CHECKBOX(self, 101, self.EvtCheckBox) 
+        wx.EVT_CHECKBOX(self, 101, self.EvtCheckBox)
+                
+        # Check Box - event 52 (export patch size maps)
+        self.insure5 = wx.CheckBox(self, 52, "", wx.Point(465 + self.add_width, 338))
+        wx.EVT_CHECKBOX(self, 52, self.EvtCheckBox)
+        self.insure5.Disable()
+        
+        #------------
+        # Fragment size        
         
         # Static text
         self.SelectMetrics4 = wx.StaticText(self, -1, "Fragment size map:", wx.Point(20, 370))
                 
         # Check box - event 102 (check calculate fragment size)
-        self.insure4 = wx.CheckBox(self, 102, '', wx.Point(120 + self.add_width, 368))
+        self.insure6 = wx.CheckBox(self, 102, '', wx.Point(120 + self.add_width, 368))
         wx.EVT_CHECKBOX(self, 102, self.EvtCheckBox)         
+        
+        # Static text
+        self.SelectMetrics5 = wx.StaticText(self, -1, "Edge depths (m):", wx.Point(165 + self.add_width, 370))
+                
+        # Text Control - event 192
+        # List of edge depths for calculation fragment size maps
+        self.editname3 = wx.TextCtrl(self, 192, '', wx.Point(300 + self.add_width, 368), wx.Size(120,-1)) 
+        wx.EVT_TEXT(self, 192, self.EvtText)
+        self.editname3.Disable()        
+        
+        # Check Box - event 53 (export fragment size maps)
+        self.insure7 = wx.CheckBox(self, 53, "", wx.Point(465 + self.add_width, 368))
+        wx.EVT_CHECKBOX(self, 53, self.EvtCheckBox)
+        self.insure7.Disable()
+        
+        #------------
+        # Structural connectivity
+        
+        # Static text
+        self.SelectMetrics6 = wx.StaticText(self, -1, "Structural connectivity:", wx.Point(20, 400))
+                        
+        # Check box - event 103 (check calculate structural connectivity)
+        self.insure8 = wx.CheckBox(self, 103, '', wx.Point(120 + self.add_width, 398))
+        wx.EVT_CHECKBOX(self, 103, self.EvtCheckBox)
+        self.insure8.Disable()
+        
+        # Check Box - event 54 (export structural connectivity maps)
+        self.insure9 = wx.CheckBox(self, 54, "", wx.Point(465 + self.add_width, 398))
+        wx.EVT_CHECKBOX(self, 54, self.EvtCheckBox)
+        self.insure9.Disable()        
+        
+        #------------
+        # Proportion of habitat
+        
+        # Static text
+        self.SelectMetrics7 = wx.StaticText(self, -1, "Proportion of habitat:", wx.Point(20, 430))
+                        
+        # Check box - event 104 (check calculate proportion of habitat)
+        self.insure10 = wx.CheckBox(self, 104, '', wx.Point(120 + self.add_width, 428))
+        wx.EVT_CHECKBOX(self, 104, self.EvtCheckBox)         
+                
+        # Static text
+        self.SelectMetrics8 = wx.StaticText(self, -1, "Window size (m):", wx.Point(165 + self.add_width, 430))
+                        
+        # Text Control - event 193
+        # List of moving window sizes for calculating proportion of habitat
+        self.editname4 = wx.TextCtrl(self, 193, '', wx.Point(300 + self.add_width, 428), wx.Size(120,-1)) 
+        wx.EVT_TEXT(self, 193, self.EvtText)
+        self.editname4.Disable()        
+                
+        # Check Box - event 55 (export proportion of habitat)
+        self.insure11 = wx.CheckBox(self, 55, "", wx.Point(465 + self.add_width, 428))
+        wx.EVT_CHECKBOX(self, 55, self.EvtCheckBox)
+        self.insure11.Disable()
+        
+        
+        
+        
+        
         
         self.SelectMetrics = wx.StaticText(self, -1,"Connectivity map:", wx.Point(20, 500))
         self.SelectMetrics = wx.StaticText(self, -1,"Gap crossing list (m):", wx.Point(140, 500))
@@ -2000,10 +2072,8 @@ class LSMetrics(wx.Panel):
         
 
                
-        # List of gap crossing capability
-        self.editname5 = wx.TextCtrl(self, 191, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
-        # List of edge depths
-        self.editname6 = wx.TextCtrl(self, 192, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
+        
+
         # List of extents for percentage maps
         self.editname7 = wx.TextCtrl(self, 194, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
         # List of radii on influence for calculating landscape diversity/heterogeneity
@@ -2014,8 +2084,7 @@ class LSMetrics(wx.Panel):
         #---------------------------------------------#       
         
         
-        wx.EVT_TEXT(self, 191, self.EvtText)
-        wx.EVT_TEXT(self, 192, self.EvtText)
+        
         
         wx.EVT_TEXT(self, 194, self.EvtText)
         wx.EVT_TEXT(self, 195, self.EvtText)
@@ -2194,7 +2263,7 @@ class LSMetrics(wx.Panel):
           self.pattern_name = event.GetString()
           
                   
-        if event.GetId() == 191:
+        if event.GetId() == 198:
           edge_depth_frag_aux = event.GetString()
           try:
             self.edge_depth_frag = [float(i) for i in edge_depth_frag_aux.split(',')]
@@ -2202,19 +2271,38 @@ class LSMetrics(wx.Panel):
             raise Exception('Edge depth values must be numerical.')
           
           
-        if event.GetId() == 192:
+        if event.GetId() == 199:
           self.escala_ED=event.GetString()    
           
-        # Text Control - event 193
+        # Text Control - event 191
         # List of codes that represent habitat, for generating binary class maps
-        if event.GetId() == 193:
+        if event.GetId() == 191:
           list_habitat = event.GetString()
-          print list_habitat
           try: # Transform values in a list of integers
             self.list_habitat_classes = [int(i) for i in list_habitat.split(',')]
           except:
             self.list_habitat_classes = [-1]
             print 'Codes for binary class reclassification of maps must be numerical.'
+            
+        # Text Control - event 192
+        # List of edge depths for calculation fragment size maps
+        if event.GetId() == 192:
+          list_edge_frag = event.GetString()
+          try: # Transform values in a list of float numbers
+            self.list_edge_depth_frag = [float(i) for i in list_edge_frag.split(',')]
+          except:
+            self.list_edge_depth_frag = [-1]
+            print 'Edge depth must be a positive numerical values, given in meters.'
+            
+        # Text Control - event 193
+        # List of moving window sizes for calculating proportion of habitat
+        if event.GetId() == 193:
+          list_window_size = event.GetString()
+          try: # Transform values in a list of float numbers
+            self.list_window_size_habitat = [float(i) for i in list_window_size.split(',')]
+          except:
+            self.list_window_size_habitat = [-1]
+            print 'Window size must be a positive numerical values, given in meters.'        
         
         if event.GetId()==194:
           # funcao para pegar a lista de escalas de porcentagem
@@ -2275,7 +2363,7 @@ class LSMetrics(wx.Panel):
           if int(event.Checked()) == 1:
             self.binary = True
             self.logger.AppendText('Create binary map: On\n')
-            self.editname2.Enable() # Disable list of habitat values
+            self.editname2.Enable() # Enable list of habitat values
             self.insure2.Enable() # Enable possibility to export binary maps
             self.insure3.Enable() # Enable possibility to use generated binary maps for other metrics
           else:
@@ -2299,30 +2387,68 @@ class LSMetrics(wx.Panel):
           if int(event.Checked()) == 1:
             self.calc_patch_size = True
             self.logger.AppendText('Calculate patch size: On\n')
-            #self.editname2.Enable() # Disable list of habitat values
-            #self.insure2.Enable() # Enable possibility to export binary maps
+            self.insure5.Enable() # Enable possibility to export patch size maps
             #self.insure3.Enable() # Enable possibility to use generated binary maps for other metrics
           else:
             self.calc_patch_size = False
             self.logger.AppendText('Calculate patch size: Off\n')
-            #self.editname2.Disable() # Disable list of habitat values
-            #self.insure2.Disable() # Disable possibility to export binary maps
-            #self.insure3.Disable() # Disable possibility to use generated binary maps for other metrics
+            self.insure5.Disable() # Disable possibility to export patch size maps
             
+          # If both patch size and frag size are checked, we may calculate structural connectivity
+          if self.calc_frag_size and self.calc_patch_size:
+            self.insure8.Enable() # Enable possibility to calculate structural connectivity maps
+            self.insure9.Enable() # Enable possibility to export structural connectivity maps
+          else:
+            self.insure8.Disable() # Disable possibility to calculate structural connectivity maps
+            self.insure9.Disable() # Disable possibility to export structural connectivity maps          
+        
+        
         # Check Box - event 102 (check calculate fragment size)
         if event.GetId() == 102:
           if int(event.Checked()) == 1:
             self.calc_frag_size = True
             self.logger.AppendText('Calculate fragment size: On\n')
-            #self.editname2.Enable() # Disable list of habitat values
-            #self.insure2.Enable() # Enable possibility to export binary maps
-            #self.insure3.Enable() # Enable possibility to use generated binary maps for other metrics
+            self.insure7.Enable() # Enable possibility to export fragment size maps
+            self.editname3.Enable() # Enable list of edge depths
           else:
             self.calc_frag_size = False
             self.logger.AppendText('Calculate fragment size: Off\n')
-            #self.editname2.Disable() # Disable list of habitat values
-            #self.insure2.Disable() # Disable possibility to export binary maps
-            #self.insure3.Disable() # Disable possibility to use generated binary maps for other metrics         
+            self.insure7.Disable() # Disable possibility to export fragment size maps
+            self.editname3.Disable() # Disable list of habitat values
+            
+          # If both patch size and frag size are checked, we may calculate structural connectivity
+          if self.calc_frag_size and self.calc_patch_size:
+            self.insure8.Enable() # Enable possibility to calculate structural connectivity maps
+            self.insure9.Enable() # Enable possibility to export structural connectivity maps
+          else:
+            self.insure8.Disable() # Disable possibility to calculate structural connectivity maps
+            self.insure9.Disable() # Disable possibility to export structural connectivity maps
+            
+        
+        # Check Box - event 103 (check calculate structural connectivity)
+        if event.GetId() == 103:
+          if int(event.Checked()) == 1:
+            self.struct_connec = True
+            self.logger.AppendText('Calculate structural connectivity: On\n')
+            self.insure9.Enable() # Enable possibility to export structural connectivity maps
+          else:
+            self.struct_connec = False
+            self.logger.AppendText('Calculate structural connectivity: Off\n')
+            self.insure9.Disable() # Disable possibility to export structural connectivity maps
+            
+            
+        # Check Box - event 104 (check calculate proportion of habitat)
+        if event.GetId() == 104:
+          if int(event.Checked()) == 1:
+            self.percentage_habitat = True
+            self.logger.AppendText('Calculate proportion of habitat: On\n')
+            self.editname4.Enable() # Enable list of window sizes
+            self.insure11.Enable() # Enable possibility to export maps of proportion of habitat
+          else:
+            self.percentage_habitat = False
+            self.logger.AppendText('Calculate proportion of habitat: Off\n')
+            self.editname4.Disable() # Disable list of window sizes
+            self.insure11.Disable() # Disable possibility to export maps of proportion of habitat
         
         #
         if event.GetId()==1111: #check EDGE
@@ -2369,7 +2495,43 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('Export binary map: On\n')
           else:
             self.export_binary = False
-            self.logger.AppendText('Export binary map: Off\n')           
+            self.logger.AppendText('Export binary map: Off\n')
+            
+        # Check Box - event 52 (export patch size maps)
+        if event.GetId() == 52:
+          if int(event.Checked()) == 1:
+            self.export_patch_size = True
+            self.logger.AppendText('Export patch size map: On\n')
+          else:
+            self.export_patch_size = False
+            self.logger.AppendText('Export patch size map: Off\n')
+            
+        # Check Box - event 53 (export fragment size maps)
+        if event.GetId() == 53:
+          if int(event.Checked()) == 1:
+            self.export_frag_size = True
+            self.logger.AppendText('Export fragment size map: On\n')
+          else:
+            self.export_frag_size = False
+            self.logger.AppendText('Export fragment size map: Off\n')
+            
+        # Check Box - event 54 (export structural connectivity maps)
+        if event.GetId() == 54:
+          if int(event.Checked()) == 1:
+            self.export_struct_connec = True
+            self.logger.AppendText('Export structural connectivity map: On\n')
+          else:
+            self.export_struct_connec = False
+            self.logger.AppendText('Export tructural connectivity map: Off\n')
+            
+        # Check Box - event 55 (export proportion of habitat)
+        if event.GetId() == 55:
+          if int(event.Checked()) == 1:
+            self.export_percentage_habitat = True
+            self.logger.AppendText('Export map of proportion of habitat: On\n')
+          else:
+            self.export_percentage_habitat = False
+            self.logger.AppendText('Export map of proportion of habitat: Off\n')        
             
     #______________________________________________________________________________________________________
     def OnExit(self, event):
