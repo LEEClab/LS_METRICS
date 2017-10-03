@@ -1844,14 +1844,36 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics = wx.StaticText(self, -1, "Pattern:", wx.Point(165 + self.add_width, 165))
         
         # Text Control - event 190
-        # Regular expression for selecting multiple maps
-        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(230 + self.add_width, 160), wx.Size(200,-1))
+        # Regular expression (pattern) for selecting multiple maps
+        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(230 + self.add_width, 160), wx.Size(195,-1))
         self.editname1.Disable()
         wx.EVT_TEXT(self, 190, self.EvtText)
         
+        #---------------------------------------------#
+        #-------------- BINARY MAPS ------------------#
+        #---------------------------------------------#        
+        
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Create binary map:", wx.Point(20, 250)) # Or habitat map?
-        self.SelectMetrics = wx.StaticText(self, -1,"Codes for habitat:", wx.Point(165 + self.add_width, 250))
+        self.SelectMetrics = wx.StaticText(self, -1, "Create binary map:", wx.Point(20, 250)) # Or habitat map?
+        
+        # Check box - event 100 (creating binary class maps)
+        self.insure1 = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 248))
+        wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)         
+
+        # Static text
+        self.SelectMetrics1 = wx.StaticText(self, -1, "Codes for habitat:", wx.Point(165 + self.add_width, 250))
+        
+        # Text Control - event 193
+        # List of codes that represent habitat, for generating binary class maps
+        self.editname2 = wx.TextCtrl(self, 193, '', wx.Point(300 + self.add_width, 250), wx.Size(120,-1)) 
+        wx.EVT_TEXT(self, 193, self.EvtText)
+        
+        # Static text
+        self.export_text = wx.StaticText(self, -1, "Export?", wx.Point(450 + self.add_width, 215))
+        
+        # Check Box - event 51 (export binary maps)
+        self.insure2 = wx.CheckBox(self, 51, "", wx.Point(465 + self.add_width, 248))
+        wx.EVT_CHECKBOX(self, 51, self.EvtCheckBox)       
       
         # Static text
         self.SelectMetrics = wx.StaticText(self, -1,"Metrics of structural connectivity:", wx.Point(20, 275))
@@ -1899,9 +1921,7 @@ class LSMetrics(wx.Panel):
         #self.insure = wx.CheckBox(self, 95, "AH Frag.", wx.Point(143,150))
         #wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)
         
-        # Check box for creating binary habitat maps
-        self.insure = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 248))
-        wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)           
+                  
       
         self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 320)) # area con connectivity
         wx.EVT_CHECKBOX(self, 97,   self.EvtCheckBox)  
@@ -1953,8 +1973,7 @@ class LSMetrics(wx.Panel):
         # Include fast description
         
 
-        # List of codes that represent habitat, for generating binary class maps
-        self.editname5 = wx.TextCtrl(self, 193, '', wx.Point(300 + self.add_width, 250), wx.Size(120,-1))        
+               
         # List of gap crossing capability
         self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(300 + self.add_width, 305), wx.Size(120,-1))
         # List of edge depths
@@ -1971,7 +1990,7 @@ class LSMetrics(wx.Panel):
         
         wx.EVT_TEXT(self, 191, self.EvtText)
         wx.EVT_TEXT(self, 192, self.EvtText)
-        wx.EVT_TEXT(self, 193, self.EvtText)
+        
         wx.EVT_TEXT(self, 194, self.EvtText)
         wx.EVT_TEXT(self, 195, self.EvtText)
         
@@ -1997,7 +2016,7 @@ class LSMetrics(wx.Panel):
         elif self.text_biodim == 'Yes':
           self.prepare_biodim = True
         else:
-          raise "Error: Preparation of BioDIM maps must be either Yes or No!"
+          raise "Error: Preparation of BioDIM maps must be either Yes or No!\n"
           
         # Refresh the list of possible input maps
         if self.prepare_biodim:        
@@ -2018,7 +2037,7 @@ class LSMetrics(wx.Panel):
           self.editmap_list.Disable()
           self.editname1.Enable()
         else:
-          raise "Error: Calculations must be done for either single or multiple maps!"
+          raise "Error: Calculations must be done for either single or multiple maps!\n"
      
     #______________________________________________________________________________________________________
     # Combo Boxes
@@ -2027,7 +2046,7 @@ class LSMetrics(wx.Panel):
         # Combo Box - event 93 (take the name of single or multiple maps and transform it into a list)
         if event.GetId() == 93:
             self.input_maps = [event.GetString()]
-            self.logger.AppendText('Map: %s' % event.GetString())
+            self.logger.AppendText('Map: %s\n' % event.GetString())
         else:
             self.logger.AppendText('EvtComboBox: NEEDS TO BE SPECIFIED')
             
@@ -2160,11 +2179,11 @@ class LSMetrics(wx.Panel):
         if event.GetId() == 192:
           self.escala_ED=event.GetString()    
           
-        # List of values that correspond to habitat
+        # Text Control - event 193
+        # List of codes that represent habitat, for generating binary class maps
         if event.GetId() == 193:
           list_habitat = event.GetString()
-          try:
-            #self.list_habitat_classes=list_habitat.split(',')
+          try: # Transform values in a list of integers
             self.list_habitat_classes = [int(i) for i in list_habitat.split(',')]
           except:
             raise Exception('Codes for binary class reclassification of maps must be numerical.')
@@ -2181,6 +2200,7 @@ class LSMetrics(wx.Panel):
         
 
     #______________________________________________________________________________________________________
+    # Check Boxes
     def EvtCheckBox(self, event):
         #self.logger.AppendText('EvtCheckBox: %d\n' % event.Checked())
         if event.GetId()==95:
@@ -2221,11 +2241,15 @@ class LSMetrics(wx.Panel):
           if int(event.Checked())==1:
             self.Dist=True
             self.logger.AppendText('EvtCheckBox:\n Create Distance map: '+`self.Dist`+' \n')
-            
-        if event.GetId()==100:
-          if int(event.Checked())==1:
-            self.Habmat=True
-            self.logger.AppendText('EvtCheckBox:\nCreate Habitat Map '+`self.Dist`+' \n')
+         
+        # Check Box - event 100 (calculate binary class map)   
+        if event.GetId() == 100:
+          if int(event.Checked()) == 1:
+            self.binary = True
+            self.logger.AppendText('Create binary map: On\n')
+          else:
+            self.binary = False
+            self.logger.AppendText('Create binary map: Off\n')            
         
         #
         if event.GetId()==101: #check EDGE
@@ -2263,7 +2287,16 @@ class LSMetrics(wx.Panel):
             self.checkCalc_PCTedge=False
             self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Percentage from edge/core \n')             
         
-         
+        # Check boxes for exporting maps
+        
+        # Check Box - event 51 (export binary maps)
+        if event.GetId() == 51:
+          if int(event.Checked()) == 1:
+            self.export_binary = True
+            self.logger.AppendText('Export binary map: On\n')
+          else:
+            self.export_binary = False
+            self.logger.AppendText('Export binary map: Off\n')           
             
     #______________________________________________________________________________________________________
     def OnExit(self, event):
