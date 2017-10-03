@@ -1972,7 +1972,7 @@ class LSMetrics(wx.Panel):
         """
               essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de diveridade de shannon
               """
-        self.insure = wx.CheckBox(self, 101111, "", wx.Point(150, 500)) # Criando mapa de diversidade de shannon
+        self.insure = wx.CheckBox(self, 1111, "", wx.Point(150, 500)) # Criando mapa de diversidade de shannon
         wx.EVT_CHECKBOX(self, 1111,   self.EvtCheckBox)   
       
       
