@@ -18,7 +18,8 @@
  BioDIM, an individual-based model of animal movement in fragmented landscapes.
  The software runs in a GRASS GIS environment and uses raster images as input.
 
- To run LSMetric:
+ To run LSMetrics:
+ 
  python LSMetrics_v1_0_0.py
  
  Copyright (C) 2015-2016 by Milton C. Ribeiro, John W. Ribeiro, and Bernardo B. S. Niebuhr.
@@ -47,6 +48,7 @@ import numpy as np
 import math # SUBSTITUIR POR NUMPY? numpy.log(number)
 from sets import Set
 import collections
+import warnings
 
 # Platform in which LSMetrics is being run
 CURRENT_OS = platform.system()
@@ -60,6 +62,13 @@ VERSION = 'v. 1.0.0'
 ########################
 # -arrumar script R para gerar as figuras que queremos
 # como conversa o R com o grass? da pra rodar o script R em BATCH mode?
+
+#try:
+  #self.escalas = map(int, event.GetString().split(','))
+  #self.logger.AppendText('Landscape scale(s): \n'+','.join(str(i) for i in self.escalas)+ '\n')            
+  #except:
+    #self.escalas = [-1]
+    #print "Could not convert at least one of the scale values to an integer."
 
 #----------------------------------------------------------------------------------
 def reclass_frag_cor(mappidfrag,dirs):
@@ -98,886 +107,1169 @@ def reclass_frag_cor(mappidfrag,dirs):
   
   
   
-  
-  
-def getsizepx(mapbin_HABITAT, esc):
-  '''
-  Function getsizepx
-  
-  This function uses the scale difined by the user and the pixel size to 
-  return the number of pixels that correspond to scale (size of the moving window)
-  '''
-  
-  res = grass.parse_command('g.region', rast=mapbin_HABITAT, flags='m')      
-  res3 = float(res['ewres'])  
-  fine_scale=(float(esc)*2)/res3
-  
-  # Checking if number of pixels of moving window is integer and even
-  #  and correcting it if necessary
-  if int(fine_scale)%2 == 0:
-    fine_scale=int(fine_scale)
-    fine_scale=fine_scale+1 
-  else:
-    fine_scale=int(fine_scale)
-  
-  return fine_scale
+
 
 #----------------------------------------------------------------------------------
 # Auxiliary functions
 
-# Output for preparing BioDIM environment
-
-def create_TXTinputBIODIM(list_maps, outPrefixmap, outputfolder):
-  
-  txtMap = open(outputfolder+"/"+outPrefixmap+".txt", "w")
-  for i in list_maps:
-    txtMap.write(i+'\n')
-  txtMap.close()
-    
-#----------------------------------------------------------------------------------
-# Output for statistics
-
-def createtxt(mapa, dirs, outname=False):
-  """
-  This function creates a text file with:
-  - Values of area, in hectares, for edge, interior and core areas (for EDGE metrics)
-  - Calues of area, in hectares, for each patch (for PATCH, FRAG and CON metrics)
-  """
-  x=grass.read_command('r.stats',flags='a',input=mapa)
-  
-  y=x.split('\n')
-  os.chdir(dirs)
-  if outname:
-    txtsaida=outname+'.txt'
-  else:
-    txtsaida=mapa+'.txt'
-  txtreclass=open(txtsaida, 'w')
-  txtreclass.write('COD'+','+'HA\n')
-  if len(y)!=0:
-    for i in y:
-      if i !='':
-        ##print i
-        f=i.split(' ')
-        if '*' in f :
-          break
-        else:
-          ##print f
-          ids=f[0]
-          ids=int(ids)
-          ##print ids
-          ha=f[1]
-          ha=float(ha)
-          haint=float(ha)
-          haint=haint/10000+1
-          ##print haint
-          
-          ##print haint
-          
-          txtreclass.write(`ids`+','+`haint`+'\n')
-  txtreclass.close()
-
-#----------------------------------------------------------------------------------
-# Auxiliary functions
-
+#-------------------------------
+# Function selectdirectory
 def selectdirectory():
+  '''
+  Function selectdirectory
+  
+  This function opens a dialog box in the GUI and asks the user to select the output folder
+  for saving files. It then returns the path to this folder as a string.
+  '''
+  
+  # Create a dialog box asking for the output folder
   dialog = wx.DirDialog(None, "Select the folder where the output files will be saved:",
                         style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+  
+  # After selected, the box closes and the path to the chosen folder is returned
   if dialog.ShowModal() == wx.ID_OK:
     #print ">>..................",dialog.GetPath()
     return dialog.GetPath()
 
-def createBinarios_single(ListMapBins, prepareBIODIM):
-  """
-  This function reclassify an input map into a binary map, according to reclassification rules passed by
-  a text file
-  """
-  readtxt=selectdirectory()
-  grass.run_command('g.region',rast=ListMapBins)
-  grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
+#-------------------------------
+# Function create_TXTinputBIODIM
+def create_TXTinputBIODIM(list_maps, outputfolder, filename):
+  '''
+  Function create_TXTinputBIODIM
   
-  if prepareBIODIM:
-    mapsList=grass.list_grouped ('rast', pattern='(*)') ['userbase']
-  else:
-    mapsList=grass.list_grouped ('rast', pattern='(*)') ['PERMANENT']  
-  return readtxt
+  This function creates the output text files that BioDIM package need to the names of the maps
+  within the GRASS GIS location and read them.
   
-def createBinarios(ListMapBins, prepareBIODIM):
-  """
-  This function reclassify a series of input maps into binary maps, according to reclassification rules passed by
-  a text file
-  """
-  readtxt=selectdirectory()
-  for i in ListMapBins:
-    grass.run_command('g.region',rast=i)
-    grass.run_command('r.reclass',input=i,output=i+'_HABMAT',rules=readtxt, overwrite = True)
-    if prepareBIODIM:
-      mapsList=grass.list_grouped ('rast', pattern='(*)') ['userbase']
-    else:
-      mapsList=grass.list_grouped ('rast', pattern='(*)') ['current_mapset']    
-    return readtxt
+  Input:
+  list_maps: list with strings; a python list of map names generated within the GRASS GIS location.
+  outputfolder: string; a folder where the output text files will be saved/written.
+  filename: string; the name of the file to be created.
   
-def create_habmat_single(ListMapBins_in, prefix, list_habitat_classes, prepareBIODIM, calcStatistics, dirout):
+  Output:
+  A file with the names of the maps within GRASS GIS.
+  '''
   
-  """
-  Function for a single map
-  This function reclassify an input map into a binary map, according to reclassification rules passed by
-  a text file
-  """
+  # Open a file in the output folder
+  txtMap = open(outputfolder+"/"+filename+".txt", "w")
 
-  ListMapBins = prefix+ListMapBins_in
-  
-  # opcao 1: ler um arquivo e fazer reclass
-  # TEMOS QUE ORGANIZAR ISSO AINDA!!
-  #readtxt=selectdirectory()
-  #grass.run_command('g.region',rast=ListMapBins)
-  #grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
-  
-  # opcao 2: definir quais classes sao habitat; todas as outras serao matriz
-  if(len(list_habitat_classes) > 0):
+  # For each map in the list of maps, it writes a line
+  for i in list_maps:
+    txtMap.write(i+'\n')
     
-    conditional = ''
-    cc = 0
-    for j in list_habitat_classes:
-      if cc > 0:
-        conditional = conditional+' || '
-      conditional = conditional+ListMapBins_in+' == '+j
-      cc += 1
+  txtMap.close() # Close the file
+    
+#-------------------------------
+# Function createtxt
+def createtxt(input_map, outputfolder, filename = ''):
+  """
+  Function createtxt
+  
+  This function creates text files with statistics (area, percentage) regarding the classes within maps
+  generated by a function in LSMetrics.
+  
+  Input:
+  input_map: string; the name of the input map the user wants statistics from
+  outputfolder: string; a folder where the output text files will be saved/written.
+  filename: string; the name of the file to be created.
+  
+  Output:
+  This function creates a text file with:
+  - Values of area, in hectares, for edge, interior and core areas (for EDGE metrics)
+  - Values of area, in hectares, for each patch (for PATCH, FRAG and CON metrics)
+  """
+  
+  # Define region
+  grass.run_command('g.region', rast=input_map)  
+  # Calculate area and percentage statistics for the input map using r.stats
+  x = grass.read_command('r.stats', flags = 'ap', input = input_map)
+  
+  # Separating values by line
+  y = x.split('\n')
+  
+  # Change to the output folder and select the name of the output text file
+  os.chdir(outputfolder)
+  if filename != '': 
+    name = filename+'.txt'
+  else:
+    name = input_map+'.txt' # If no specific name is given, call it 'input_map'
+  
+  # Initialize arrays
+  idd = []
+  areas = []
+  
+  if len(y) != 0:
+    # For each element in the list of values
+    for i in y:
+      if i != '':
+        ##print i
+        # Split by space
+        f = i.split(' ')
+        
+        # In the last line we may have *; stop in this case
+        if '*' in f :
+          break
+        # If it is not the last line
+        else:
+          ##print f
+          # Get id (raster value)
+          ids = f[0]
+          ids = int(ids)
+          idd.append(ids)
+          ##print ids
+          # Get area in m2 and transforms to hectares
+          ha = f[1]
+          ha = float(ha)
+          haint = float(ha)
+          haint = haint/10000+1
+          areas.append(haint)
+          ##print haint
+          
+    # Calculate the percentage
+    percentages = [float(i)/sum(areas) for i in areas]
+    
+    # Open output file
+    txt_file = open(name, 'w')
+    
+    # Write header
+    txt_file.write('CODE'+','+'AREA_HA'+','+'PROPORTION\n')    
+
+    # For each element
+    for i in range(len(idd)):
+      # Write line in the output file
+      txt_file.write(`idd[i]`+','+`areas[i]`+','+`percentages[i]`+'\n')
+          
+    # Close the output file
+    txt_file.close()
+    
+#-------------------------------
+# Function rulesreclass
+def rulesreclass(input_map, outputfolder):
+  """
+  Function rulesreclass
+  
+  This function sets the rules for area reclassification for patch ID, using stats -a for each patch.
+  The output is a text file with such rules. 
+  
+  Input:
+  input_map: string; the name of the input map the user wants statistics from
+  outputfolder: string; a folder where the output text files will be saved/written.
+  
+  Output:
+  This function creates a text file area values for each patch ID, used to reclassify and 
+  generate maps area maps. It returns the name of the text files with reclassification rules
+  """
+  
+  # Define region
+  grass.run_command('g.region', rast=input_map)  
+  # Calculate area and percentage statistics for the input map using r.stat  
+  x = grass.read_command('r.stats', flags='a', input=input_map)
+  
+  # Separating values by line
+  y=x.split('\n')
+ 
+  # Change to the output folder and select the name of the output text file
+  os.chdir(outputfolder)
+  txt_file_name = input_map+'_rules.txt'
+    
+  if y!=0:
+    
+    # Open output file 
+    txtreclass = open(txt_file_name, 'w')
+    
+    # For each element in the list of values
+    for i in y:
+      if i != '':
+        ##print i
+        # Split by space
+        f=i.split(' ')
+        
+        # In the last line we may have *; stop in this case
+        if '*' in f or 'L' in f :
+          break
+        # If it is not the last line
+        else:
+          ##print f
+          # Get id (raster value)
+          ids=f[0]
+          ids=int(ids)
+          ##print ids
+          # Get area in m2 and transforms to hectares
+          ha=f[1]
+          ha=float(ha)
+          haint=float(round(ha))
+          haint2=haint/10000+1
+          
+          # Write line in the output file
+          txtreclass.write(`ids`+'='+`haint2`+ '\n')
+          
+    txtreclass.close()
+    
+  # Return the name of the reclass file generated
+  return txt_file_name
+
+#----------------------------------------------------------------------------------
+# Leading with scales, lengths, and pixel sizes - organization
+
+#-------------------------------
+# Function connectivity_scales
+def connectivity_scales(input_map, list_gap_crossing):
+  """
+  Function connectivity_scales
+  
+  This function calculates the size(s) and number of pixels corresponding to the scales maps will be dilatated
+  to be integrated by gap crossing distances.
+  If the gap crossing distance is 120m for example, maps are dilatated by 60m (half of it), so that patches
+  distant less that 120m are considered functionally connected. Then, this half-distance is returned, and its
+  equivalent in number of pixels.
+  
+  Input:
+  input_map: string; name of the input map (from where the resolution is assessed).
+  list_gap_crossing: python list with float numbers; list of gap crossing distances, in meters, to be considered.
+  
+  Output:
+  The number of pixels and distance by which habitat patches must be dilatated to assess functional connectivity
+  of habitat patches.
+  """
+  
+  # Assess the resolution of the input map
+  map_info = grass.parse_command('g.region', rast = input_map, flags = 'm')
+  res = float(map_info['ewres'])
+  
+  # Initialize list of edge depth in meters and corridor width in pixels
+  list_gap_crossing_meters = []
+  list_gap_crossing_pixels = []
+  
+  # For each value in the list of edge depths
+  for i in list_gap_crossing:
+    
+    # Trasform into float
+    cross = float(i)
+    # Number of pixels that corresponds to each gap crossing distance
+    fine_scale = cross/res
+    # Gap crossing is devided by two, since this is the scale that will be dilatated in maps
+    gap_crossing_pixels = fine_scale/2
+    
+    gap_crossing_pixels = int(round(gap_crossing_pixels, ndigits=0))
+
+    # Rounding to an integer odd number of pixels
+    # If the number is even, we sum 1 to have an odd number of pixel to the moving window    
+    if gap_crossing_pixels %2 == 0:
+      gap_crossing_pixels = int(gap_crossing_pixels)
+      gap_crossing_pixels = 2*gap_crossing_pixels + 1
+      list_gap_crossing_meters.append(int(cross/2)) # append the gap crossing in meters to the list
+      list_gap_crossing_pixels.append(gap_crossing_pixels) # append the gap crossing in pixels to the list
       
-    expression = ListMapBins+'_HABMAT = if('+conditional+', 1, 0)'
-    grass.run_command('g.region', rast=ListMapBins_in)
-    grass.mapcalc(expression, overwrite = True, quiet = True)
-    grass.run_command('r.null', map=ListMapBins+'_HABMAT', null='0') # precisa disso??, nao sei .rsrs 
-  else:
-    print 'You did not type which class is habitat!! Map not generated' # organizar para dar um erro; pode ser com try except 
-    
-  if prepareBIODIM:
-    create_TXTinputBIODIM([ListMapBins+'_HABMAT'], "simulados_HABMAT", dirout)   
-  else:
-    grass.run_command('g.region', rast=ListMapBins+'_HABMAT')
-    grass.run_command('r.out.gdal', input=ListMapBins+'_HABMAT', out=ListMapBins+'_HABMAT.tif',overwrite = True)
-  
-  if calcStatistics:
-    createtxt(ListMapBins+'_HABMAT', dirout, ListMapBins+'_HABMAT')
-
-
-def create_habmat(ListMapBins, list_habitat_classes, prepareBIODIM, calcStatistics, dirout, prefix = ''):
-  """
-  Function for a series of maps
-  This function reclassify an input map into a binary map, according to reclassification rules passed by
-  a text file
-  """
-  
-  if prepareBIODIM:
-    lista_maps_habmat=[]  
-  
-  # opcao 1: ler um arquivo e fazer reclass
-  # TEMOS QUE ORGANIZAR ISSO AINDA!!
-  #readtxt=selectdirectory()
-  #grass.run_command('g.region',rast=ListMapBins)
-  #grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
-  
-  # opcao 2: definir quais classes sao habitat; todas as outras serao matriz
-  cont = 1
-  for i_in in ListMapBins:
-    
-    if prefix == '':
-      pre_numb = ''
+    # If the number is already odd, it is ok    
     else:
-      if cont <= 9:
-        pre_numb = "000"+`cont`+'_'
-      elif cont <= 99:
-        pre_numb = "00"+`cont`+'_'
-      elif cont <= 999:        
-        pre_numb = "0"+`cont`+'_'
-      else: 
-        pre_numb = `cont`+'_'
+      gap_crossing_pixels = int(round(gap_crossing_pixels, ndigits=0))
+      gap_crossing_pixels = 2*gap_crossing_pixels + 1
+      list_gap_crossing_meters.append(int(cross/2)) # append the gap crossing in meters to the list
+      list_gap_crossing_pixels.append(gap_crossing_pixels) # append the gap crossing in pixels to the list
+        
+  # Return both lists
+  return list_gap_crossing_meters, list_gap_crossing_pixels
+
+#-------------------------------
+# Function frag_scales 
+def frag_scales(input_map, list_edge_depths):
+  """
+  Function frag_scales
+  
+  This function calculates the size(s) and number of pixels corresponding to
+  to corridor width to be removed from fragment size maps, based on a (list of) value(s) of edge depth.
+  The size of corridors to be removed is considered as twice the edge depth.
+  
+  Input:
+  input_map: string; name of the input map (from where the resolution is assessed).
+  list_edge_depths: python list with float numbers; list of edge depths, in meters, to be considered.
+  
+  Output:
+  The number of pixels which correspond to the width of the corridors to be excluded from habitat patch maps - 
+  corridor width is considered as twice the edge depth.
+  As this values in pixels are used in the GRASS GIS function as the size of the moving window in r.neighbors, 
+  remind that this size must be always odd, and the function already does that.
+  """
+  
+  # Assess the resolution of the input map
+  map_info = grass.parse_command('g.region', rast = input_map, flags='m')
+  res = float(map_info['ewres'])
+
+  # Initialize list of edge depth in meters and corridor width in pixels
+  list_edge_depths_meters = []
+  list_corridor_width_pixels =[]
+  
+  # For each value in the list of edge depths
+  for i in list_edge_depths:
     
-    if(len(list_habitat_classes) > 0):
+    depth = float(i)
+    # Number of pixels that corresponds to each edge depth
+    fine_scale = depth/res
+    # Corridor width is considered as twice the edge depth
+    corridor_width_pix = fine_scale * 2
+    
+    # Rounding to an integer number of pixels
+    # If the number is even, we sum 1 to have an odd number of pixel to the moving window
+    if corridor_width_pix %2 == 0:
+      corridor_width_pix = int(corridor_width_pix)
+      corridor_width_pix = corridor_width_pix + 1
+      list_edge_depths_meters.append(int(depth)) # append the edge depth to the list
+      list_corridor_width_pixels.append(corridor_width_pix) # append the corridor width to the list
+      
+    # If the number is already odd, it is ok
+    else:
+      corridor_width_pix = int(round(corridor_width_pix, ndigits=0))
+      list_edge_depths_meters.append(int(depth)) # append the edge depth to the list
+      list_corridor_width_pixels.append(corridor_width_pix) # append the corridor width to the list
+      
+  # Return both lists
+  return list_edge_depths_meters, list_corridor_width_pixels
+
+
+#------------------------------- 
+# Function get_size_pixels
+def get_size_pixels(input_map, scale_in_meters):
+  '''
+  Function get_size_pixels
+  
+  This function uses the scale difined by the user and the pixel size to 
+  return the number of pixels that correspond to the scale
+  (to define the size of the moving window)
+  
+  Input:
+  input_map: string; name of the input map, from which the resolution/pixel size will be taken.
+  scale_in_meters: float or integer; size of the moving window in meters.
+  
+  Output:
+  The number of pixels which correspond to the size of the moving window, to be used in a GRASS GIS
+  function such as r.neighbors. Remind that this size must be always odd, and the function already does that.
+  '''
+  
+  # Assess the resolution of the input map
+  map_info = grass.parse_command('g.region', rast = input_map, flags = 'm')      
+  res = float(map_info['ewres'])
+  #######################################
+  #scale_in_pixels = (float(scale_in_meters)*2)/res # should we really multiply it by 2????
+  scale_in_pixels = (float(scale_in_meters))/res # should we really multiply it by 2????
+  
+  # Checking if number of pixels of moving window is integer and even
+  # and correcting it if necessary
+  if int(scale_in_pixels)%2 == 0: # If the number of pixels is even, add 1
+    scale_in_pixels = int(scale_in_pixels)
+    scale_in_pixels = scale_in_pixels + 1 
+  else: # If the number of pixels is odd, it is ok
+    scale_in_pixels = int(scale_in_pixels)
+  
+  # Returns the scale in number of pixels
+  return scale_in_pixels
+
+#----------------------------------------------------------------------------------
+# Functions of Landscape Metrics
+
+#-------------------------------
+# Function create_binary
+def create_binary(list_maps, list_habitat_classes, zero = True,
+                  prepare_biodim = False, calc_statistics = False, 
+                  prefix = '', add_counter_name = False, export = False, dirout = ''):
+  """
+  Function create_binary
+  
+  This function reclassify a (series of) input map(s) into a (series of) binary map(s), with values
+  1/0 or 1/null. This is done by considering a list of values which represent a given type of habitat 
+  or environment, which will be reclassified as 1 in the output; all the other values in the map 
+  will be set to zero/null value.
+  
+  Input:
+  list_maps: list with strings; a python list with maps loaded in the GRASS GIS location.
+  list_habitat_classes: list with strings or integers; a python list of values that correspond to habitat in the input raster maps, and will be considered as 1.
+  zero: (True/False) logical; if True, non-habitat values are set to zero; otherwise, they are set as null values.
+  prepare_biodim: (True/False) logical; if True, maps and input text files for running BioDIM package are prepared.
+  calc_statistics: (True/False) logical; if True, statistics are calculated and saved as an output text file.
+  prefix: string; a prefix to be appended in the beginning of the output map names.
+  add_counter_name: (True/False) logical; if True, a number is attached to the beginning of each outputmap name, in the order of the input, following 0001, 0002, 0003 ...
+  export: (True/False) logical; if True, the maps are exported from GRASS.
+  dirout: string; folder where the output maps will be saved when exported from GRASS. If '', the output maps are generated but are not exported from GRASS.
+  
+  Output:
+  A binary map where all the map pixels in 'list_habitat_classes' are set to 1 and all the other pixels are
+  set to zero (if zero == True, or null if zero == False).
+  The function returns a python list with the names of the binary class maps created.
+  If prepare_biodim == True, a file with binary maps to run BioDIM is generated.
+  If calc_statistics == True, a file with the area/proportion of each class (habitat/non-habitat) is generated.
+  """
+  
+  # If we ask to export something but we do not provide an output folder, it shows a warning
+  if (export or prepare_biodim or calc_statistics) and dirout == '':
+    warnings.warn("You are trying to export files from GRASS but we did not set an output folder.")
+  
+  # A list of map names is initialized, to be returned
+  list_maps_habmat = []
+   
+  # Initialize counter, in case the user wants to add a number to the map name
+  cont = 1
+  
+  # For each map in the list of input maps
+  for i_in in list_maps:
+    
+    # Putting (or not) a prefix in the beginning of the output map name
+    if not add_counter_name:
+      pre_numb = ''
+    else: # adding numbers in case of multiple maps
+      pre_numb = '00000'+`cont`+'_'
+      pre_numb = pre_numb[-5:]
+    
+    # Check if the list of classes is greater than zero
+    if len(list_habitat_classes) > 0:
+      
       conditional = ''
       cc = 0
+      # Creates a condition for all habitat classes being considered as 1
       for j in list_habitat_classes:
         if cc > 0:
           conditional = conditional+' || '
-        conditional = conditional+i_in+' == '+j
+        conditional = conditional+i_in+' == '+str(j)
         cc += 1
       
+      # Prefix of the output
       i = prefix+pre_numb+i_in
       
-      expression = i+'_HABMAT = if('+conditional+', 1, 0)'
+      if zero == True:
+      # Calculating binary map with 1/0
+        expression = i+'_HABMAT = if('+conditional+', 1, 0)'
+      else:
+        # Calculating binary map with 1/0
+        expression = i+'_HABMAT = if('+conditional+', 1, null())'        
+
+      # Define region and run reclassification using r.mapcalc
       grass.run_command('g.region', rast=i_in)
       grass.mapcalc(expression, overwrite = True, quiet = True)
-      grass.run_command('r.null', map=i+'_HABMAT', null='0') # precisa disso?? 
-    else:
-      print 'You did not type which class is habitat!! Map not generated' # organizar para dar um erro; pode ser com try except 
     
-    if prepareBIODIM:
-      lista_maps_habmat.append(i+'_HABMAT') 
-    else:
+    else: # If the list of habitat values is not > 0, it gives an error.
+      raise Exception('You did not type which class is habitat! Map not generated.\n')
+    
+    # The list of map names is updated
+    list_maps_habmat.append(i+'_HABMAT')
+    
+    # If export == True and dirout == '', the map is not exported; in other cases, the map is exported in this folder
+    if export == True and dirout != '':
+      os.chdir(dirout)
       grass.run_command('g.region', rast=i+'_HABMAT')
-      grass.run_command('r.out.gdal', input=i+'_HABMAT', out=i+'_HABMAT.tif',overwrite = True)
+      grass.run_command('r.out.gdal', input=i+'_HABMAT', out=i+'_HABMAT.tif', overwrite = True)
   
-    if calcStatistics:
+    # If calc_statistics == True, the stats of this metric are calculated and exported
+    if calc_statistics and dirout != '':
       createtxt(i+'_HABMAT', dirout, i+'_HABMAT')
-      
+    
+    # Update counter of the map number
     cont += 1
       
-  if prepareBIODIM:
-    create_TXTinputBIODIM(lista_maps_habmat, "simulados_HABMAT", dirout)  
+  # If prepare_biodim == True, use the list of output map names to create a text file and export it
+  if prepare_biodim:
+    create_TXTinputBIODIM(list_maps_habmat, dirout, "simulados_HABMAT")
     
-def rulesreclass(mapa, dirs):
-  """
-  This function sets the rules for area reclassification for patch ID, using stats -a for each patch.
-  The output is a text file with such rules
-  """
-  grass.run_command('g.region',rast=mapa)
-  x=grass.read_command('r.stats',flags='a',input=mapa)
-  
-  y=x.split('\n')
- 
-  os.chdir(dirs)
-  txtsaida=mapa+'_rules.txt'
-  txtreclass=open(mapa+'_rules.txt','w')
-    
-  if y!=0:
-    for i in y:
-          if i !='':
-                ##print i
-                f=i.split(' ')
-          if '*' in f or 'L' in f :
-                break
-          else:
-                ##print f 
-                ids=f[0]
-                ids=int(ids)
-                ##print ids
-                ha=f[1]
-                ha=float(ha)
-                haint=float(round(ha))
-                
-                ##print haint
-                haint2=haint/10000+1
-                txtreclass.write(`ids`+'='+`haint2`+ '\n')
-    txtreclass.close()      
-  return txtsaida
+  return list_maps_habmat
 
-def exportPNG(mapinp=[]):
-  """ 
-  This function exports a series of raster maps as png images
-  """
-  lista_png=[]
-  for i in mapinp:
-    grass.run_command('r.out.png',input=i,out=i)
-    lista_png.append(i+'.png')
-  return lista_png
-
-#----------------------------------------------------------------------------------
-# Leading with scales - organization
- 
-def escala_con(mapa,esc):
-  """
-  This function separates the input for functional connectivity maps (CON), separatins scales (distances)
-  which will be used to generate the maps. Also, it defines the numbers of pixels to consider, besides distances
-  ############# EH ISSO?
-  """
-  esclist=esc.split(',')
-  res=grass.parse_command('g.region', rast=mapa, flags='m')
-  res2=float(res['ewres'])
-  listasizefinal=[]
-  listametersfinal=[]  
-  for i in esclist:
-    esc=int(i)
-    fine_scale=(esc)/res2
-    
-    fine_scale=int(round(fine_scale, ndigits=0))  
-    if fine_scale%2==0:
-      fine_scale=int(fine_scale)
-      fine_scale=fine_scale+1
-      listasizefinal.append(fine_scale)
-      listametersfinal.append(esc)
-    else:
-      fine_scale=int(round(fine_scale, ndigits=0))
-      listasizefinal.append(fine_scale)
-      listametersfinal.append(esc)      
-  return listasizefinal,listametersfinal # number of pixels+1, number of meters
-    
-def escala_frag(mapa,esclist):
-  """
-  This function separates the input for fragmented maps (FRAG, excluding corridors/edges), 
-  separatins scales (distances) which will be used to generate the maps. 
-  Also, it defines the numbers of pixels to consider, besides distances
-  ############# EH ISSO?
-  """
-  esclist_splited=esclist.split(',')
-  res=grass.parse_command('g.region', rast=mapa, flags='m')
-  res2=float(res['ewres'])
-  listasizefinal=[]
-  listametersfinal=[]
-  for i in esclist_splited:
-    esc=int(i)
-    fine_scale=esc/res2
-    fine_scale=fine_scale*2 # pq vezes 2?
-    if fine_scale%2==0:
-      fine_scale=int(fine_scale)
-      fine_scale=fine_scale+1
-      listasizefinal.append(fine_scale)
-      listametersfinal.append(esc)
-    else:
-      fine_scale=int(round(fine_scale, ndigits=0))
-      listasizefinal.append(fine_scale)
-      listametersfinal.append(esc)      
-  return listasizefinal,listametersfinal
-
-#----------------------------------------------------------------------------------
-# Metrics for fragmented (excluding edges/corridors) views of landscapes (FRAG)
-
-def areaFragSingle(map_HABITAT_Single, prefix,list_esc_areaFrag,dirout,prepareBIODIM,calcStatistics,removeTrash):
-  """
-  Function for a single map
-  This function fragments patches (FRAG), excluding corridors and edges given input scales (distances), and:
-  - generates and exports maps with Patch ID and Area of each "fragmented" patch
-  - generatics statistics - Area per patch (if calcStatistics == True)
-  """
-  
-  ListmapsFrag = prefix+map_HABITAT_Single
-  
-  grass.run_command('g.region', rast=map_HABITAT_Single)
-  Lista_escalafragM, listmeters = escala_frag(map_HABITAT_Single,list_esc_areaFrag)
-
-  x=0
-  for a in Lista_escalafragM:
-    
-    meters=int(listmeters[x])  
-    #print escalafragM
-    grass.run_command('r.neighbors', input=map_HABITAT_Single, output=ListmapsFrag+"_ero_"+`meters`+'m', method='minimum', size=a, overwrite = True)
-    grass.run_command('r.neighbors', input=ListmapsFrag+"_ero_"+`meters`+'m', output=ListmapsFrag+"_dila_"+`meters`+'m', method='maximum', size=a, overwrite = True)
-    expression1=ListmapsFrag+"_FRAG"+`meters`+"m_mata = if("+ListmapsFrag+"_dila_"+`meters`+'m'+" > 0, "+ListmapsFrag+"_dila_"+`meters`+'m'+", null())"
-    grass.mapcalc(expression1, overwrite = True, quiet = True)
-    expression2=ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo = if("+map_HABITAT_Single+" >= 0, "+ListmapsFrag+"_FRAG"+`meters`+"m_mata, null())"
-    grass.mapcalc(expression2, overwrite = True, quiet = True)
-    grass.run_command('r.clump', input=ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo", output=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid", overwrite = True)
-    
-    grass.run_command('g.region', rast=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid")
-    nametxtreclass=rulesreclass(ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid", dirout)
-    grass.run_command('r.reclass', input=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid", output=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_AreaHA", rules=nametxtreclass, overwrite = True)   
-    os.remove(nametxtreclass)
-    
-    # identificando branch tampulins e corredores
-    
-    
-    expression3='temp_BSSC=if(isnull('+ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_AreaHA"+'),'+map_HABITAT_Single+')'
-    grass.mapcalc(expression3, overwrite = True, quiet = True)    
-     
-    expression1="MapaBinario=temp_BSSC"
-    grass.mapcalc(expression1, overwrite = True, quiet = True)    
-    grass.run_command('g.region',rast="MapaBinario")
-    expression2="A=MapaBinario"
-    grass.mapcalc(expression2, overwrite = True, quiet = True)
-    grass.run_command('g.region',rast="MapaBinario")
-    expression3="MapaBinario_A=if(A[0,0]==0 && A[0,-1]==1 && A[1,-1]==0 && A[1,0]==1,1,A)"
-    grass.mapcalc(expression3, overwrite = True, quiet = True)
-    expression4="A=MapaBinario_A"
-    grass.mapcalc(expression4, overwrite = True, quiet = True)
-    expression5="MapaBinario_AB=if(A[0,0]==0 && A[-1,0]==1 && A[-1,1]==0 && A[0,1]==1,1,A)"
-    grass.mapcalc(expression5, overwrite = True, quiet = True) 
-    expression6="A=MapaBinario_AB"
-    grass.mapcalc(expression6, overwrite = True, quiet = True)
-    expression7="MapaBinario_ABC=if(A[0,0]==0 && A[0,1]==1 && A[1,1]==0 && A[1,0]==1,1,A)"
-    grass.mapcalc(expression7, overwrite = True, quiet = True)
-    expression8="A=MapaBinario_ABC"
-    grass.mapcalc(expression8, overwrite = True, quiet = True)
-    expression9="MapaBinario_ABCD=if(A[0,0]==0 && A[1,0]==1 && A[1,1]==0 && A[0,1]==1,1,A)"
-    grass.mapcalc(expression9, overwrite = True, quiet = True)
    
-    expression4='MapaBinario_ABCD1=if(MapaBinario_ABCD==0,null(),1)'
-    grass.mapcalc(expression4, overwrite = True, quiet = True)    
-    grass.run_command('r.clump', input='MapaBinario_ABCD1', output="MapaBinario_ABCD1_pid", overwrite = True)
+#-------------------------------
+# Function patch_size
+def patch_size(input_maps, 
+               zero = False, diagonal = False,
+               prepare_biodim = False, calc_statistics = False, remove_trash = True,
+               prefix = '', add_counter_name = False, export = False, export_pid = False, dirout = ''):
+  """
+  Function patch_size
+  
+  This function calculates patch area, considering all pixels that are continuous as a single patch.
+  Areas are calculated in hectares, assuming that input map projection is in meters.
+  
+  Input:
+  input_maps: list with strings; a python list with maps loaded in the GRASS GIS location. Must be binary class maps (e.g. maps of habitat-non habitat).
+  zero: (True/False) logical; if True, non-habitat values are set to zero; otherwise, they are set as null values.
+  diagonal: (True/False) logical; if True, cells are clumped also in the diagonal for estimating patch size.
+  prepare_biodim: (True/False) logical; if True, maps and input text files for running BioDIM package are prepared.
+  calc_statistics: (True/False) logical; if True, statistics are calculated and saved as an output text file.
+  remove_trash: (True/False) logical; if True, maps generated in the middle of the calculation are deleted; otherwise they are kept within GRASS.
+  prefix: string; a prefix to be appended in the beginning of the output map names.
+  add_counter_name: (True/False) logical; if True, a number is attached to the beginning of each outputmap name, in the order of the input, following 0001, 0002, 0003 ...
+  export: (True/False) logical; if True, the maps are exported from GRASS.
+  export_pid: (True/False) logical; if True, the patch ID (pid) maps are exported from GRASS.
+  dirout: string; folder where the output maps will be saved when exported from GRASS. If '', the output maps are generated but are not exported from GRASS.
+  
+  Output:
+  Maps with Patch ID and Area of each patch (considering non-habitat as 0 if zero == True or null if zero == False).
+  If prepare_biodim == True, a file with patch size maps to run BioDIM is generated.
+  If calc_statistics == True, a file with area per patch in hectares is generated.
+  """
+  
+  # If we ask to export something but we do not provide an output folder, it shows a warning
+  if (export or prepare_biodim or calc_statistics) and dirout == '':
+    warnings.warn("You are trying to export files from GRASS but we did not set an output folder.")  
+  
+  # The lists of map names of Patch ID and area are initialized
+  lista_maps_pid = []
+  lista_maps_area = []  
+
+  # Initialize counter, in case the user wants to add a number to the map name
+  cont = 1
+  
+  # For each map in the list of input maps
+  for i_in in input_maps:
     
-    grass.run_command('r.neighbors', input='MapaBinario_ABCD1_pid', output='MapaBinario_ABCD1_pid_mode', method='mode', size=3, overwrite = True)
-    grass.run_command('r.cross', input=ListmapsFrag+"_FRAG"+`meters`+'m_mata_clump_pid,MapaBinario_ABCD1_pid_mode',out=ListmapsFrag+"_FRAG"+`meters`+'m_mata_clump_pid_cross_corredor',overwrite = True)
-    cross_TB = grass.read_command('r.stats', input=ListmapsFrag+"_FRAG"+`meters`+'m_mata_clump_pid_cross_corredor', flags='l')  # pegando a resolucao
-    print cross_TB 
-    txt=open("table_cross.txt",'w')
-    txt.write(cross_TB)
-    txt.close()
-    
-    reclass_frag_cor('MapaBinario_ABCD1_pid', dirout)
-    
-    expression10='MapaBinario_ABCD1_pid_reclass_sttepings=if(isnull(MapaBinario_ABCD1_pid_reclass)&&temp_BSSC==1,3,MapaBinario_ABCD1_pid_reclass)'
-    grass.mapcalc(expression10, overwrite = True, quiet = True)    
-    expression11='MapaBinario_ABCD1_pid_reclass_sttepings2=if(temp_BSSC==1,MapaBinario_ABCD1_pid_reclass_sttepings,null())'
-    grass.mapcalc(expression11, overwrite = True, quiet = True)     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if prepareBIODIM:
-      #grass.run_command('r.out.gdal',input=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid",out=ListmapsFrag+"_FRAG"+`meters`+"m_PID.tif")
-      create_TXTinputBIODIM([ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid"], "simulados_HABMAT_FRAC_"+`meters`+"m_PID", dirout)
-      create_TXTinputBIODIM([ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_AreaHA"], "simulados_HABMAT_FRAC_"+`meters`+"m_AREApix", dirout)
-    else:
-      grass.run_command('g.region', rast=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_AreaHA")
-      grass.run_command('r.out.gdal', input=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_AreaHA", out=ListmapsFrag+"_FRAG"+`meters`+"m_AreaHA.tif",overwrite = True)      
+    # Putting (or not) a prefix in the beginning of the output map name
+    if not add_counter_name:
+      pre_numb = ''
+    else: # adding numbers in case of multiple maps
+      pre_numb = '00000'+`cont`+'_'
+      pre_numb = pre_numb[-5:]
       
-    if calcStatistics:
-      createtxt(ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid", dirout, ListmapsFrag+"_FRAG"+`meters`+"m_AreaHA")        
+    # Prefix of the output
+    i = prefix+pre_numb+i_in
+
+    # Define the region
+    grass.run_command('g.region', rast = i_in)
     
-    if removeTrash:
-      if prepareBIODIM:
-        txts = [ListmapsFrag+"_ero_"+`meters`+'m', ListmapsFrag+"_dila_"+`meters`+'m', ListmapsFrag+"_FRAG"+`meters`+"m_mata", ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo"]
+    # Clump pixels that are contiguous in the same patch ID
+    if diagonal: # whether or not to clump pixels considering diagonals
+      grass.run_command('r.clump', input=i_in, output=i+'_patch_clump', overwrite = True, flags = 'd')
+    else:
+      grass.run_command('r.clump', input=i_in, output=i+'_patch_clump', overwrite = True)
+      
+    # Takes only what is habitat
+    expression1 = i+"_patch_clump_hab = "+i+"_patch_clump * "+i_in
+    grass.mapcalc(expression1, overwrite = True, quiet = True)
+    # Transforms non-habitat cells into null cells - this is the Patch ID map
+    expression2 = i+"_pid = if("+i+"_patch_clump_hab > 0, "+i+"_patch_clump_hab, null())"
+    grass.mapcalc(expression2, overwrite = True, quiet = True)
+    
+    # Reclass pixel id values by calculating the area in hectares
+    
+    if dirout != '':
+      os.chdir(dirout) # folder to save temp reclass file
+    # If zero == False (non-habitat cells are considered null)
+    if zero == False:
+      nametxtreclass = rulesreclass(input_map = i+"_pid", outputfolder = '.')
+      grass.run_command('r.reclass', input = i+"_pid", output = i+"_patch_AreaHA", rules=nametxtreclass, overwrite = True)
+      os.remove(nametxtreclass)
+      # We could also use r.area
+      # area - number of pixels
+      #grass.run_command("r.area", input = i+"_pid", output = i+"_numpix", overwrite = True)
+      # area in hectares
+      # Code for taking the area of a pixel in hectares - pixel_size
+      #ex = i+"_AreaHA = "+i+"_pid * pixel_size"
+      #grass.mapcalc(ex, overwrite = True)
+    else: # If zero == True (non-habitat cells are considered as zeros)
+      nametxtreclass = rulesreclass(input_map = i+"_pid", outputfolder = '.')
+      grass.run_command('r.reclass', input = i+"_pid", output = i+"_patch_AreaHA_aux", rules=nametxtreclass, overwrite = True)
+      os.remove(nametxtreclass)      
+
+      # Transforms what is 1 in the binary map into the patch size
+      expression3 = i+'_patch_AreaHA = if('+i_in+' == 0, 0, '+i+'_patch_AreaHA_aux)'
+      grass.mapcalc(expression3, overwrite = True)    
+    
+    # The list of map names is updated
+    lista_maps_pid.append(i+"_pid")
+    lista_maps_area.append(i+"_patch_AreaHA")
+     
+    # If export == True and dirout == '', the map is not exported; in other cases, the map is exported in this folder
+    if export == True and dirout != '':
+      os.chdir(dirout)
+      grass.run_command('g.region', rast = i+"_patch_AreaHA")
+      grass.run_command('r.out.gdal', input = i+"_patch_AreaHA", out = i+"_patch_AreaHA.tif", overwrite = True)
+    # If export_pid == True, the patch ID map is exported in this folder
+    if export_pid == True and dirout != '':
+      os.chdir(dirout)
+      grass.run_command('g.region', rast = i+"_pid")
+      grass.run_command('r.out.gdal', input = i+"_pid", out = i+"_pid.tif", overwrite = True)
+          
+    # If calc_statistics == True, the stats of this metric are calculated and exported
+    if calc_statistics:
+      createtxt(i+"_pid", dirout, i+"_patch_AreaHA")
+    
+    # If remove_trash == True, the intermediate maps created in the calculation of patch size are removed
+    if remove_trash:
+      # Define list of maps
+      if zero:
+        txts = [i+"_patch_clump", i+"_patch_clump_hab", i+"_patch_AreaHA_aux"]
       else:
-        txts = [ListmapsFrag+"_ero_"+`meters`+'m', ListmapsFrag+"_dila_"+`meters`+'m', ListmapsFrag+"_FRAG"+`meters`+"m_mata", ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo"] #, ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid"]
+        txts = [i+"_patch_clump", i+"_patch_clump_hab"]
+      # Remove maps from GRASS GIS location
       for txt in txts:
         grass.run_command('g.remove', type="raster", name=txt, flags='f')
-    x=x+1     
-
-def areaFrag(ListmapsFrag, prefix,list_esc_areaFrag,dirout,prepareBIODIM,calcStatistics,removeTrash,list_meco,check_func_edge):
-  """
-  Function for a series of maps
-  This function fragments patches (FRAG), excluding corridors and edges given input scales (distances), and:
-  - generates and exports maps with Patch ID and Area of each "fragmented" patch
-  - generatics statistics - Area per patch (if calcStatistics == True)
-  """
-
-  if prepareBIODIM:
-    esc, met = escala_frag(ListmapsFrag[0], list_esc_areaFrag)
-    lista_maps_pid = np.empty((len(ListmapsFrag), len(esc)), dtype=np.dtype('a200'))
-    lista_maps_area = np.empty((len(ListmapsFrag), len(esc)), dtype=np.dtype('a200'))
-  
-  z = 0
-  cont = 1
-  list_ssbc_maps=[]
-  for i_in in ListmapsFrag:
     
-    if prefix == '':
-      pre_numb = ''
-    else:
-      if cont <= 9:
-        pre_numb = "000"+`cont`+'_'
-      elif cont <= 99:
-        pre_numb = "00"+`cont`+'_'
-      elif cont <= 999:        
-        pre_numb = "0"+`cont`+'_'
-      else: 
-        pre_numb = `cont`+'_'
-      
-    i = prefix+pre_numb+i_in
-          
-    grass.run_command('g.region', rast=i_in)
-    Lista_escalafragM, listmeters = escala_frag(i_in, list_esc_areaFrag)
-    #print escalafragM
-    x=0
-    lista_maps_CSSB=[]
-    #lista_maps_area=[]
-    for a in Lista_escalafragM:
-      meters=int(listmeters[x])  
-      format_escale_name='0000'+`meters`
-      format_escale_name=format_escale_name[-4:]
-      grass.run_command('r.neighbors', input=i_in, output=i+"_ero_"+format_escale_name+'m', method='minimum', size=a, overwrite = True)
-      grass.run_command('r.neighbors', input=i+"_ero_"+format_escale_name+'m', output=i+"_dila_"+format_escale_name+'m', method='maximum', size=a, overwrite = True)
-      expression1=i+"_FRAG"+format_escale_name+"m_mata = if("+i+"_dila_"+format_escale_name+'m'+" > 0, "+i+"_dila_"+format_escale_name+'m'+", null())"
-      grass.mapcalc(expression1, overwrite = True, quiet = True)
-      expression2=i+"_FRAG"+format_escale_name+"m_mata_lpo = if("+i_in+" >= 0, "+i+"_FRAG"+format_escale_name+"m_mata, null())"
-      grass.mapcalc(expression2, overwrite = True, quiet = True)
-      grass.run_command('r.clump', input=i+"_FRAG"+format_escale_name+"m_mata_lpo", output=i+"_FRAG"+format_escale_name+"m_mata_clump_pid", overwrite = True)
-      
-      grass.run_command('g.region', rast=i+"_FRAG"+format_escale_name+"m_mata_clump_pid")
-      nametxtreclass=rulesreclass(i+"_FRAG"+format_escale_name+"m_mata_clump_pid", dirout)
-      grass.run_command('r.reclass', input=i+"_FRAG"+format_escale_name+"m_mata_clump_pid", output=i+"_FRAG"+format_escale_name+"m_mata_clump_AreaHA", rules=nametxtreclass, overwrite = True)   
-      os.remove(nametxtreclass)
-      
-      # identificando branch tampulins e corredores
-      
-      
-      expression3='temp_BSSC=if(isnull('+i+"_FRAG"+format_escale_name+"m_mata_clump_AreaHA"+'),'+i_in+')'
-      grass.mapcalc(expression3, overwrite = True, quiet = True)    
-      
-      expression1="MapaBinario=temp_BSSC"
-      grass.mapcalc(expression1, overwrite = True, quiet = True)    
-      grass.run_command('g.region',rast="MapaBinario")
-      expression2="A=MapaBinario"
-      grass.mapcalc(expression2, overwrite = True, quiet = True)
-      grass.run_command('g.region',rast="MapaBinario")
-      expression3="MapaBinario_A=if(A[0,0]==0 && A[0,-1]==1 && A[1,-1]==0 && A[1,0]==1,1,A)"
-      grass.mapcalc(expression3, overwrite = True, quiet = True)
-      expression4="A=MapaBinario_A"
-      grass.mapcalc(expression4, overwrite = True, quiet = True)
-      expression5="MapaBinario_AB=if(A[0,0]==0 && A[-1,0]==1 && A[-1,1]==0 && A[0,1]==1,1,A)"
-      grass.mapcalc(expression5, overwrite = True, quiet = True) 
-      expression6="A=MapaBinario_AB"
-      grass.mapcalc(expression6, overwrite = True, quiet = True)
-      expression7="MapaBinario_ABC=if(A[0,0]==0 && A[0,1]==1 && A[1,1]==0 && A[1,0]==1,1,A)"
-      grass.mapcalc(expression7, overwrite = True, quiet = True)
-      expression8="A=MapaBinario_ABC"
-      grass.mapcalc(expression8, overwrite = True, quiet = True)
-      expression9="MapaBinario_ABCD=if(A[0,0]==0 && A[1,0]==1 && A[1,1]==0 && A[0,1]==1,1,A)"
-      grass.mapcalc(expression9, overwrite = True, quiet = True)
-      
-      expression4='MapaBinario_ABCD1=if(MapaBinario_ABCD==0,null(),1)'
-      grass.mapcalc(expression4, overwrite = True, quiet = True)    
-      grass.run_command('r.clump', input='MapaBinario_ABCD1', output="MapaBinario_ABCD1_pid", overwrite = True)
-      
-      grass.run_command('r.neighbors', input='MapaBinario_ABCD1_pid', output='MapaBinario_ABCD1_pid_mode', method='mode', size=3, overwrite = True)
-      grass.run_command('r.cross', input=i+"_FRAG"+format_escale_name+'m_mata_clump_pid,MapaBinario_ABCD1_pid_mode',out=i+"_FRAG"+format_escale_name+'m_mata_clump_pid_cross_corredor',overwrite = True)
-      cross_TB = grass.read_command('r.stats', input=i+"_FRAG"+format_escale_name+'m_mata_clump_pid_cross_corredor', flags='l')  # pegando a resolucao
-      print cross_TB 
-      txt=open("table_cross.txt",'w')
-      txt.write(cross_TB)
-      txt.close()
-      
-      reclass_frag_cor('MapaBinario_ABCD1_pid', dirout) 
-      expression10='MapaBinario_ABCD1_pid_reclass_sttepings=if(isnull(MapaBinario_ABCD1_pid_reclass)&&temp_BSSC==1,3,MapaBinario_ABCD1_pid_reclass)'
-      grass.mapcalc(expression10, overwrite = True, quiet = True)  
-      
-      outputmapSCB=i_in+'_SSCB_deph_'+format_escale_name
-      expression11=outputmapSCB+'=if(temp_BSSC==1,MapaBinario_ABCD1_pid_reclass_sttepings,null())'
-      grass.mapcalc(expression11, overwrite = True, quiet = True) 
-      list_ssbc_maps.append(outputmapSCB)
-      
+    # Update counter of the map number    
+    cont += 1
+        
+  # If prepare_biodim == True, use the list of output map names to create a text file and export it
+  if prepare_biodim:
+    create_TXTinputBIODIM(lista_maps_pid, dirout, "simulados_HABMAT_grassclump_PID")
+    create_TXTinputBIODIM(lista_maps_area, dirout, "simulados_HABMAT_grassclump_AREApix")  # Review these names later on!!
+    
+  # Return a list of maps of Patch ID and Patch area
+  return lista_maps_pid, lista_maps_area
 
+
+#-------------------------------
+# Function fragment_area
+def fragment_area(input_maps, list_edge_depths,
+                  zero = False, diagonal = False,
+                  struct_connec = False, patch_size_map_names = [],
+                  prepare_biodim = False, calc_statistics = False, remove_trash = True,
+                  prefix = '', add_counter_name = False, export = False, export_fid = False, dirout = ''):
+  # check that - other parameters used list_meco, check_func_edge,
+  """
+  Function fragment_area
+  
+  This function fragments habitat patches (FRAG), excluding corridors and edges,
+  given input habitat maps and scales that correspond to edge depths. The habitatcorridors 
+  that are excluded from habitat patch to habitat fragment maps have a width corresponding to 
+  two the edge depth passed as input.
+  
+  Input:
+  input_maps: list with strings; a python list with maps loaded in the GRASS GIS location. Must be binary class maps (e.g. maps of habitat-non habitat).
+  list_edge_depths: list with numbers; each value correpond to a edge depth; the function excludes corridors with width = 2*(edge depth) to calculate fragment size.
+  zero: (True/False) logical; if True, non-habitat values are set to zero; otherwise, they are set as null values.
+  diagonal: (True/False) logical; if True, cells are clumped also in the diagonal for estimating patch size.
+  struct_connec: (True/False) logical; if True, a structural connectivity map is also calculated. In this case, a (list of) map(s) of pactch size must be also provided.
+  patch_size_map_names: list with strings; a python list with the names of the patch size maps created using the function patch_size, corresponding to the patch size maps to be used to calculate structural connectivity maps.
+  prepare_biodim: (True/False) logical; if True, maps and input text files for running BioDIM package are prepared.
+  calc_statistics: (True/False) logical; if True, statistics are calculated and saved as an output text file.
+  remove_trash: (True/False) logical; if True, maps generated in the middle of the calculation are deleted; otherwise they are kept within GRASS.
+  prefix: string; a prefix to be appended in the beginning of the output map names.
+  add_counter_name: (True/False) logical; if True, a number is attached to the beginning of each outputmap name, in the order of the input, following 0001, 0002, 0003 ...
+  export: (True/False) logical; if True, the maps are exported from GRASS.
+  export_fid: (True/False) logical; if True, the fragment ID (fid) maps are exported from GRASS.
+  dirout: string; folder where the output maps will be saved when exported from GRASS. If '', the output maps are generated but are not exported from GRASS.
+  
+  Output:
+  Maps with Fragment ID and Area in hectares of each fragment (considering non-habitat as 0 if zero == True or null if zero == False).
+  Fragments are equal to habitat patches but exclude corridors and branches with width equals 2*(edge depth).
+  If prepare_biodim == True, a file with fragment size maps to run BioDIM is generated.
+  If calc_statistics == True, a file with area per fragment in hectares is generated.
+  """
+
+  # If we ask to export something but we do not provide an output folder, it shows a warning
+  if (export or prepare_biodim or calc_statistics) and dirout == '':
+    warnings.warn("You are trying to export files from GRASS but we did not set an output folder.")
+    
+  if (struct_connec and (len(patch_size_map_names) == 0 or len(patch_size_map_names) != len(input_maps))):
+    raise Warning('A list of names of patch size maps must be provided, and its length must be equal to number of input maps.')
+
+  # If prepare_biodim == True, lists of map names of Fragment ID and area are initialized
+  # Theses lists here are matrices with input maps in rows and edge depths in columns
+  if prepare_biodim:
+    lista_maps_fid = np.empty((len(input_maps), len(list_edge_depths)), dtype=np.dtype('a200'))
+    lista_maps_farea = np.empty((len(input_maps), len(list_edge_depths)), dtype=np.dtype('a200'))
+  
+  # Initialize counter of map name for lists of map names
+  z = 0 
+  
+  # Initialize counter, in case the user wants to add a number to the map name
+  cont = 1
+  list_ssbc_maps=[] ###################
+  
+  # For each map in the list of input maps
+  for i_in in input_maps:
+    
+    # Putting (or not) a prefix in the beginning of the output map name
+    if not add_counter_name:
+      pre_numb = ''
+    else: # adding numbers in case of multiple maps
+      pre_numb = '00000'+`cont`+'_'
+      pre_numb = pre_numb[-5:]
       
-      if prepareBIODIM:    
-        #grass.run_command('r.out.gdal',input=i+"_FRAG"+`meters`+"m_mata_clump_pid",out=i+"_FRAG"+`meters`+"m_PID.tif")
-        lista_maps_pid[z,x] = i+"_FRAG"+format_escale_name+"m_mata_clump_pid"
-        lista_maps_area[z,x] = i+"_FRAG"+format_escale_name+"m_mata_clump_AreaHA"
-        #lista_maps_pid.append(i+"_FRAG"+`meters`+"m_mata_clump_pid")
-        #lista_maps_area.append(i+"_FRAG"+`meters`+"m_mata_clump_AreaHA")
+    # Prefix of the output
+    i = prefix+pre_numb+i_in
+    
+    # Define the region      
+    grass.run_command('g.region', rast=i_in)
+    
+    # Calculate edge depths and corridor widths to be subtracted from connections between patches
+    edge_depths, list_corridor_width_pixels = frag_scales(i_in, list_edge_depths)
+    
+    # Initialize counter of edge depth value for lists of map names
+    x = 0
+    
+    lista_maps_CSSB=[] ################
+
+    # For each value in the list of corridor widths
+    for a in list_corridor_width_pixels:
+      meters = int(edge_depths[x]) # should we use the input list_edge_depths instead? only list_edge_depths[x]
+      
+      # Prefix for map names regarding scale
+      format_escale_name = '0000'+`meters`
+      format_escale_name = format_escale_name[-4:]
+      
+      # Uses a moving window to erodes habitat patches, by considering the minimum value within a window
+      grass.run_command('r.neighbors', input = i_in, output = i+"_ero_"+format_escale_name+'m', method = 'minimum', size = a, overwrite = True)#, flags = 'c')
+      
+      # This is followed by dilatating the patches again (but not the corridors), by considering the maximum value within a moving window
+      grass.run_command('r.neighbors', input=i+"_ero_"+format_escale_name+'m', output = i+"_dila_"+format_escale_name+'m', method = 'maximum', size = a, overwrite = True)#, flags = 'c')
+      
+      # Taking only positive values
+      expression1 = i+"_FRAG_"+format_escale_name+"m_pos = if("+i+"_dila_"+format_escale_name+'m'+" > 0, "+i+"_dila_"+format_escale_name+'m'+", null())"
+      grass.mapcalc(expression1, overwrite = True, quiet = True)
+      expression2 = i+"_FRAG_"+format_escale_name+"m_pos_habitat = if("+i_in+" >= 0, "+i+"_FRAG_"+format_escale_name+"m_pos, null())"
+      grass.mapcalc(expression2, overwrite = True, quiet = True)
+      
+      # Clump pixels that are contiguous in the same fragment ID
+      if diagonal: # whether or not to clump pixels considering diagonals
+        grass.run_command('r.clump', input = i+"_FRAG_"+format_escale_name+"m_pos_habitat", output = i+"_"+format_escale_name+"m_fid", overwrite = True, flags = 'd')
       else:
-        grass.run_command('g.region', rast=i+"_FRAG"+format_escale_name+"m_mata_clump_AreaHA")
-        grass.run_command('r.out.gdal', input=i+"_FRAG"+format_escale_name+"m_mata_clump_AreaHA", out=i+"_FRAG"+format_escale_name+"m_AreaHA.tif", overwrite = True)        
+        grass.run_command('r.clump', input = i+"_FRAG_"+format_escale_name+"m_pos_habitat", output = i+"_"+format_escale_name+"m_fid", overwrite = True)      
       
-      if calcStatistics:      
-        createtxt(i+"_FRAG"+format_escale_name+"m_mata_clump_pid", dirout, i+"_FRAG"+format_escale_name+"m_AreaHA")      
+      # Reclass pixel id values by calculating the area in hectares
+        
+      if dirout != '':
+        os.chdir(dirout) # folder to save temp reclass file
+      # Define region
+      grass.run_command('g.region', rast = i+"_"+format_escale_name+"m_fid")
       
-      if removeTrash:
-        if prepareBIODIM:
-          txts = ['MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_reclass','MapaBinario_ABCD1_pid_reclass_sttepings2',i+"_ero_"+format_escale_name+'m', i+"_dila_"+format_escale_name+'m', i+"_FRAG"+format_escale_name+"m_mata", i+"_FRAG"+format_escale_name+"m_mata_lpo",'temp_BSSC','MapaBinario','A','MapaBinario_A','MapaBinario_AB','MapaBinario_ABC','MapaBinario_ABCD','MapaBinario_ABCD1','MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_mode',i+"_FRAG"+`meters`+'m_mata_clump_pid_cross_corredor','MapaBinario_ABCD1_pid_reclass_sttepings']
+      # If zero == False (non-habitat cells are considered null)
+      if zero == False:      
+        nametxtreclass = rulesreclass(i+"_"+format_escale_name+"m_fid", outputfolder = '.')
+        grass.run_command('r.reclass', input = i+"_"+format_escale_name+"m_fid", output = i+"_"+format_escale_name+"m_fragment_AreaHA", rules=nametxtreclass, overwrite = True)   
+        os.remove(nametxtreclass)
+      else: # If zero == True (non-habitat cells are considered as zeros)
+        nametxtreclass = rulesreclass(i+"_"+format_escale_name+"m_fid", outputfolder = '.')
+        grass.run_command('r.reclass', input = i+"_"+format_escale_name+"m_fid", output = i+"_"+format_escale_name+"m_fragment_AreaHA_aux", rules=nametxtreclass, overwrite = True)   
+        os.remove(nametxtreclass)
+        
+        # Transforms what is 1 in the binary map into the patch size
+        expression3 = i+'_'+format_escale_name+'m_fragment_AreaHA = if('+i_in+' == 0, 0, '+i+'_'+format_escale_name+'m_fragment_AreaHA_aux)'
+        grass.mapcalc(expression3, overwrite = True)          
+      
+      ## identificando branch tampulins e corredores
+      #expression3='temp_BSSC=if(isnull('+i+"_FRAG"+format_escale_name+"m_mata_clump_AreaHA"+'),'+i_in+')'
+      #grass.mapcalc(expression3, overwrite = True, quiet = True)    
+      
+      #expression1="MapaBinario=temp_BSSC"
+      #grass.mapcalc(expression1, overwrite = True, quiet = True)    
+      #grass.run_command('g.region',rast="MapaBinario")
+      #expression2="A=MapaBinario"
+      #grass.mapcalc(expression2, overwrite = True, quiet = True)
+      #grass.run_command('g.region',rast="MapaBinario")
+      #expression3="MapaBinario_A=if(A[0,0]==0 && A[0,-1]==1 && A[1,-1]==0 && A[1,0]==1,1,A)"
+      #grass.mapcalc(expression3, overwrite = True, quiet = True)
+      #expression4="A=MapaBinario_A"
+      #grass.mapcalc(expression4, overwrite = True, quiet = True)
+      #expression5="MapaBinario_AB=if(A[0,0]==0 && A[-1,0]==1 && A[-1,1]==0 && A[0,1]==1,1,A)"
+      #grass.mapcalc(expression5, overwrite = True, quiet = True) 
+      #expression6="A=MapaBinario_AB"
+      #grass.mapcalc(expression6, overwrite = True, quiet = True)
+      #expression7="MapaBinario_ABC=if(A[0,0]==0 && A[0,1]==1 && A[1,1]==0 && A[1,0]==1,1,A)"
+      #grass.mapcalc(expression7, overwrite = True, quiet = True)
+      #expression8="A=MapaBinario_ABC"
+      #grass.mapcalc(expression8, overwrite = True, quiet = True)
+      #expression9="MapaBinario_ABCD=if(A[0,0]==0 && A[1,0]==1 && A[1,1]==0 && A[0,1]==1,1,A)"
+      #grass.mapcalc(expression9, overwrite = True, quiet = True)
+      
+      #expression4='MapaBinario_ABCD1=if(MapaBinario_ABCD==0,null(),1)'
+      #grass.mapcalc(expression4, overwrite = True, quiet = True)    
+      #grass.run_command('r.clump', input='MapaBinario_ABCD1', output="MapaBinario_ABCD1_pid", overwrite = True)
+      
+      #grass.run_command('r.neighbors', input='MapaBinario_ABCD1_pid', output='MapaBinario_ABCD1_pid_mode', method='mode', size=3, overwrite = True)
+      #grass.run_command('r.cross', input=i+"_FRAG"+format_escale_name+'m_mata_clump_pid,MapaBinario_ABCD1_pid_mode',out=i+"_FRAG"+format_escale_name+'m_mata_clump_pid_cross_corredor',overwrite = True)
+      #cross_TB = grass.read_command('r.stats', input=i+"_FRAG"+format_escale_name+'m_mata_clump_pid_cross_corredor', flags='l')  # pegando a resolucao
+      #print cross_TB 
+      #txt=open("table_cross.txt",'w')
+      #txt.write(cross_TB)
+      #txt.close()
+      
+      #reclass_frag_cor('MapaBinario_ABCD1_pid', dirout) 
+      #expression10='MapaBinario_ABCD1_pid_reclass_sttepings=if(isnull(MapaBinario_ABCD1_pid_reclass)&&temp_BSSC==1,3,MapaBinario_ABCD1_pid_reclass)'
+      #grass.mapcalc(expression10, overwrite = True, quiet = True)  
+      
+      #outputmapSCB=i_in+'_SSCB_deph_'+format_escale_name
+      #expression11=outputmapSCB+'=if(temp_BSSC==1,MapaBinario_ABCD1_pid_reclass_sttepings,null())'
+      #grass.mapcalc(expression11, overwrite = True, quiet = True) 
+      #list_ssbc_maps.append(outputmapSCB)
+      
+      # If prepare_biodim == True, the list of map names is updated
+      if prepare_biodim:
+        lista_maps_fid[z,x] = i+"_"+format_escale_name+"m_fid"
+        lista_maps_farea[z,x] = i+'_'+format_escale_name+'m_fragment_AreaHA'
+
+      # If export == True and dirout == '', the map is not exported; in other cases, the map is exported in this folder
+      if export == True and dirout != '':
+        os.chdir(dirout)
+        grass.run_command('g.region', rast = i+'_'+format_escale_name+'m_fragment_AreaHA')
+        grass.run_command('r.out.gdal', input = i+'_'+format_escale_name+'m_fragment_AreaHA', out = i+'_'+format_escale_name+'m_fragment_AreaHA.tif', overwrite = True)
+      # If export_fid == True, the fragment ID map is exported in this folder
+      if export_fid == True and dirout != '':
+        os.chdir(dirout)
+        grass.run_command('g.region', rast = i+"_"+format_escale_name+"m_fid")
+        grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+"m_fid", out = i+"_"+format_escale_name+'m_fid.tif', overwrite = True)
+      
+      # If calc_statistics == True, the stats of this metric are calculated and exported
+      if calc_statistics:      
+        createtxt(i+"_"+format_escale_name+"m_fid", dirout, i+'_'+format_escale_name+'m_fragment_AreaHA')      
+      
+      # If remove_trash == True, the intermediate maps created in the calculation of patch size are removed
+      if remove_trash:
+        # Define list of maps
+        if zero:
+          txts = [i+"_ero_"+format_escale_name+'m', i+"_dila_"+format_escale_name+'m', i+"_FRAG_"+format_escale_name+"m_pos", i+"_FRAG_"+format_escale_name+"m_pos_habitat", i+'_'+format_escale_name+'m_fragment_AreaHA_aux', 'MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_reclass','MapaBinario_ABCD1_pid_reclass_sttepings2', 'temp_BSSC','MapaBinario','A','MapaBinario_A','MapaBinario_AB','MapaBinario_ABC','MapaBinario_ABCD','MapaBinario_ABCD1','MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_mode', i+'_FRAG'+`meters`+'m_mata_clump_pid_cross_corredor','MapaBinario_ABCD1_pid_reclass_sttepings']
         else:        
-          txts = ['MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_reclass','MapaBinario_ABCD1_pid_reclass_sttepings2',i+"_ero_"+format_escale_name+'m', i+"_dila_"+format_escale_name+'m', i+"_FRAG"+format_escale_name+"m_mata", i+"_FRAG"+format_escale_name+"m_mata_lpo",'temp_BSSC','MapaBinario','A','MapaBinario_A','MapaBinario_AB','MapaBinario_ABC','MapaBinario_ABCD','MapaBinario_ABCD1','MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_mode',i+"_FRAG"+`meters`+'m_mata_clump_pid_cross_corredor','MapaBinario_ABCD1_pid_reclass_sttepings']#, i+"_FRAG"+`meters`+"m_mata_clump_pid"]
+          txts = [i+"_ero_"+format_escale_name+'m', i+"_dila_"+format_escale_name+'m', i+"_FRAG_"+format_escale_name+"m_pos", i+"_FRAG_"+format_escale_name+"m_pos_habitat", 'MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_reclass','MapaBinario_ABCD1_pid_reclass_sttepings2', 'temp_BSSC','MapaBinario','A','MapaBinario_A','MapaBinario_AB','MapaBinario_ABC','MapaBinario_ABCD','MapaBinario_ABCD1','MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_mode',i+"_FRAG"+`meters`+'m_mata_clump_pid_cross_corredor','MapaBinario_ABCD1_pid_reclass_sttepings']
+        # Remove maps from GRASS GIS location        
         for txt in txts:
           grass.run_command('g.remove', type="raster", name=txt, flags='f')
-      x=x+1
-    z=z+1
+          
+      # Update counter columns (edge depths)
+      x = x + 1
+    
+    # Update counter rows (map names)
+    z = z + 1
+    
+    # Update counter for map names
     cont += 1
  
-  if check_func_edge:
-    cont=0
-    for i in list_ssbc_maps:
+  #if check_func_edge:
+    #cont=0
+    #for i in list_ssbc_maps:
       
-      meters=int(listmeters[cont])  # lista de escalas em metros
-      format_escale_name='0000'+`meters`
-      format_escale_name=format_escale_name[-4:]   
-      nameaux=i[0:len(ListmapsFrag)]
-      outputname=nameaux+'_SSCCB_deph_'+format_escale_name
-      inpmaps=i+','+list_meco[cont]
-      
-      
-      grass.run_command('r.patch',input=inpmaps,out=outputname,overwrite = True)
-      cont+=1
-      
-  
-  
-  
-  if prepareBIODIM:
-    for i in range(len(met)):
-      mm = int(met[i])
-      create_TXTinputBIODIM(lista_maps_pid[:,i].tolist(), "simulados_HABMAT_FRAC_"+`mm`+"m_PID", dirout)
-      create_TXTinputBIODIM(lista_maps_area[:,i].tolist(), "simulados_HABMAT_FRAC_"+`mm`+"m_AREApix", dirout)              
+      #meters=int(listmeters[cont])  # lista de escalas em metros
+      #format_escale_name='0000'+`meters`
+      #format_escale_name=format_escale_name[-4:]   
+      #nameaux=i[0:len(input_maps)]
+      #outputname=nameaux+'_SSCCB_deph_'+format_escale_name
+      #inpmaps=i+','+list_meco[cont]
       
       
-#----------------------------------------------------------------------------------
-# Metrics for patch size/area/ID (PATCH)
+      #grass.run_command('r.patch',input=inpmaps,out=outputname,overwrite = True)
+      #cont+=1
+      
+  # If prepare_biodim == True, use the list of output map names to create a text file and export it, for each scale
+  if prepare_biodim:
+    # For each value in the list of edge depths
+    for i in range(len(list_edge_depths)):
+      # Create a text file as BioDIM input
+      mm = int(list_edge_depths[i])
+      create_TXTinputBIODIM(lista_maps_fid[:,i].tolist(), outputfolder = dirout, filename = "simulados_HABMAT_FRAC_"+`mm`+"m_PID")
+      create_TXTinputBIODIM(lista_maps_farea[:,i].tolist(), outputfolder = dirout, filename = "simulados_HABMAT_FRAC_"+`mm`+"m_AREApix")              
 
-def patchSingle(Listmapspatch_in, prefix,dirout,prepareBIODIM,calcStatistics,removeTrash):
-  """
-  Function for a single map
-  This function calculates area per patch in a map (PATCH), considering structural connectivity 
-  (no fragmentation or dilatation):
-  - generates and exports maps with Patch ID and Area of each patch
-  - generatics statistics - Area per patch (if calcStatistics == True)
-  """
-  
-  Listmapspatch = prefix+Listmapspatch_in
-  
-  grass.run_command('g.region', rast=Listmapspatch_in)
-  grass.run_command('r.clump', input=Listmapspatch_in, output=Listmapspatch+"_patch_clump", overwrite = True)
-  ########## essa proxima linha muda algo?? clump * mata/nao-mata  
-  expression12=Listmapspatch+"_patch_clump_mata = "+Listmapspatch+"_patch_clump*"+Listmapspatch_in
-  grass.mapcalc(expression12, overwrite = True, quiet = True)
-  expression13=Listmapspatch+"_patch_clump_mata_limpa_pid = if("+Listmapspatch+"_patch_clump_mata > 0, "+Listmapspatch+"_patch_clump_mata, null())"
-  grass.mapcalc(expression13, overwrite = True, quiet = True)
-  
-  nametxtreclass=rulesreclass(Listmapspatch+"_patch_clump_mata_limpa_pid", dirout)
-  grass.run_command('r.reclass', input=Listmapspatch+"_patch_clump_mata_limpa_pid", output=Listmapspatch+"_patch_clump_mata_limpa_AreaHA", rules=nametxtreclass, overwrite = True)
-  os.remove(nametxtreclass)
-  
-  if prepareBIODIM:
-    #grass.run_command('r.out.gdal',input=Listmapspatch+"_patch_clump_mata_limpa",out=Listmapspatch+"_patch_PID.tif")
-    create_TXTinputBIODIM([Listmapspatch+"_patch_clump_mata_limpa_pid"], "simulados_HABMAT_grassclump_PID", dirout)
-    create_TXTinputBIODIM([Listmapspatch+"_patch_clump_mata_limpa_AreaHA"], "simulados_HABMAT_grassclump_AREApix", dirout)    
-  else:
-    grass.run_command('g.region', rast=Listmapspatch+"_patch_clump_mata_limpa_AreaHA")
-    grass.run_command('r.out.gdal', input=Listmapspatch+"_patch_clump_mata_limpa_AreaHA", out=Listmapspatch+"_patch_AreaHA.tif",overwrite = True)
-  
-  if calcStatistics:
-    createtxt(Listmapspatch+"_patch_clump_mata_limpa_pid", dirout, Listmapspatch+"_patch_AreaHA")
-  
-  if removeTrash:
-    if prepareBIODIM:
-      txts = [Listmapspatch+"_patch_clump", Listmapspatch+"_patch_clump_mata"]
-    else:
-      txts = [Listmapspatch+"_patch_clump", Listmapspatch+"_patch_clump_mata"] #, Listmapspatch+"_patch_clump_mata_limpa_pid"]
-    for txt in txts:
-      grass.run_command('g.remove', type="raster", name=txt, flags='f')
-  
-def Patch(Listmapspatch_in, prefix,dirout,prepareBIODIM,calcStatistics,removeTrash):
-  """
-  Function for a series of maps
-  This function calculates area per patch in a map (PATCH), considering structural connectivity 
-  (no fragmentation or dilatation):
-  - generates and exports maps with Patch ID and Area of each patch
-  - generatics statistics - Area per patch (if calcStatistics == True)
-  """
-  
-  if prepareBIODIM:
-    lista_maps_pid=[]
-    lista_maps_area=[]  
 
-  cont = 1
-  # isso eh assim mesmo ?????????????????????
+#-------------------------------
+# Function percentage
+def percentage(input_maps, scale_list, method = 'average', append_name = '',
+               remove_trash = True, export = False, dirout = ''):
+  '''
+  Function percentage
   
+  This function calculates the percentage of a certain variable using a neighborhood analysis.
+  Given a list of window sizes, a moving window is applied to the binary input maps and the percentage
+  of the variable around the focal pixel is calculated.
   
-  for i_in in Listmapspatch_in:
+  Input:
+  input_maps: list with strings; each input map corresponds to a binary map (1/0 and NOT 1/null!!) that represents a certain variable.
+  scale_list: list with numbers (float or integer); each value correponds to a size for the moving window, in meters, in which the percentage will be calculated.
+  method: string; the method calculation performed inside the moving window. For percentages in general the method 'average' is used (stardard), but ir may be set to other values depending on the kind of input variable.
+  append_name: name to be appended in the output map name. It may be used to distinguish between edge, core, and habitat percentage, for example.
+  remove_trash: (True/False) logical; if True, maps generated in the middle of the calculation are deleted; otherwise they are kept within GRASS.
+  export: (True/False) logical; if True, the maps are exported from GRASS.
+  dirout: string; folder where the output maps will be saved when exported from GRASS. If '', the output maps are generated but are not exported from GRASS.
+               
+  Output:
+  A map in which each pixel is the percentage of the input variable in a window around it. The size of the window
+  is given by the scale provided as input.
+  '''
+  
+  #calc_statistics = False for landscape level?, 
+  
+  # If we ask to export something but we do not provide an output folder, it shows a warning
+  if export and dirout == '':
+    warnings.warn("You are trying to export files from GRASS but we did not set an output folder.")  
+  
+  # For each map in the input list
+  for in_map in input_maps: 
     
-    if prefix == '':
-      pre_numb = ''
-    else:
-      if cont <= 9:
-        pre_numb = "000"+`cont`+'_'
-      elif cont <= 99:
-        pre_numb = "00"+`cont`+'_'
-      elif cont <= 999:        
-        pre_numb = "0"+`cont`+'_'
-      else: 
-        pre_numb = `cont`+'_'
+    # For each scale in the scale list
+    for i in scale_list:
+    
+      # Transform the scale into an integer
+      scale = int(i)
       
-    i = prefix+pre_numb+i_in
-
-    grass.run_command('g.region', rast=i_in)
-    grass.run_command('r.clump', input=i_in, output=i+"_patch_clump", overwrite = True)
-    expression12=i+"_patch_clump_mata = "+i+"_patch_clump*"+i_in
-    grass.mapcalc(expression12, overwrite = True, quiet = True)
-    expression13=i+"_patch_clump_mata_limpa_pid = if("+i+"_patch_clump_mata > 0, "+i+"_patch_clump_mata, null())"
-    grass.mapcalc(expression13, overwrite = True, quiet = True)
-    
-    nametxtreclass=rulesreclass(i+"_patch_clump_mata_limpa_pid", dirout)
-    grass.run_command('r.reclass', input=i+"_patch_clump_mata_limpa_pid", output=i+"_patch_clump_mata_limpa_AreaHA", rules=nametxtreclass, overwrite = True)
-    os.remove(nametxtreclass)
-    
-    if prepareBIODIM:
-      #grass.run_command('r.out.gdal',input=i+"_patch_clump_mata_limpa_pid",out=i+"_patch_PID.tif")
-      lista_maps_pid.append(i+"_patch_clump_mata_limpa_pid")
-      lista_maps_area.append(i+"_patch_clump_mata_limpa_AreaHA")      
-    else:
-      grass.run_command('g.region', rast=i+"_patch_clump_mata_limpa_AreaHA")
-      grass.run_command('r.out.gdal', input=i+"_patch_clump_mata_limpa_AreaHA", out=i+"_patch_AreaHA.tif",overwrite = True)
-          
-    if calcStatistics:
-      createtxt(i+"_patch_clump_mata_limpa_pid", dirout, i+"_patch_AreaHA")
-    
-    if removeTrash:
-      if prepareBIODIM:
-        txts = [i+"_patch_clump", i+"_patch_clump_mata"]
-      else:
-        txts = [i+"_patch_clump", i+"_patch_clump_mata"]#, i+"_patch_clump_mata_limpa_pid"]
-      for txt in txts:
-        grass.run_command('g.remove', type="raster", name=txt, flags='f')
+      # Defines the output name
+      # The variable append_name is used to define different percentages, such as habitat, edge, or core percentage
+      outputname = in_map+append_name+"_pct_"+str(scale)+"m"
+      
+      # Define the window size in pixels
+      windowsize = get_size_pixels(input_map = in_map, scale_in_meters = scale)
+      
+      # Define the region
+      grass.run_command('g.region', rast = in_map)
+      
+      # Calculate average value based on the average value (or other method of r.neighbors) of moving window
+      grass.run_command('r.neighbors', input = in_map, output = "temp_PCT", method = method, size = windowsize, overwrite = True)
+      
+      # Multiplying by 100 to get a value between 0 and 100%
+      expression1 = outputname+' = temp_PCT * 100'
+      grass.mapcalc(expression1, overwrite = True, quiet = True)
+      
+      # If export == True, export the rsulting map
+      if export == True and dirout != '':
+        os.chdir(dirout)      
+        grass.run_command('r.out.gdal', input = outputname, out = outputname+'.tif', overwrite = True)
         
-    cont += 1
-        
-    
-  if prepareBIODIM:
-    create_TXTinputBIODIM(lista_maps_pid, "simulados_HABMAT_grassclump_PID", dirout)
-    create_TXTinputBIODIM(lista_maps_area, "simulados_HABMAT_grassclump_AREApix", dirout)  
-  
-  return Listmapspatch_in
+      # If remove_trash == True, remove the maps generated in the process
+      if remove_trash:
+        grass.run_command('g.remove', type = "raster", name = 'temp_PCT', flags='f')
 
-#----------------------------------------------------------------------------------
-# Metrics for functional connectivity area/ID (CON)
 
-def areaconSingle(mapHABITAT_Single, prefix,escala_frag_con,dirout,prepareBIODIM,calcStatistics,removeTrash):
-  os.chdir(dirout)
+#-------------------------------
+# Function functional_connectivity
+def functional_connectivity(input_maps, list_gap_crossing,
+                            zero = False, diagonal = False,
+                            functional_connec = False,
+                            functional_area_complete = False,
+                            prepare_biodim = False, calc_statistics = False, remove_trash = True,
+                            prefix = '', add_counter_name = False, export = False, export_pid = False, dirout = ''):  
   """
-  Function for a single map
-  This function calculates functional patch area in a map (CON), considering functional connectivity 
-  (dilatation of edges given input scales/distances), and:
-  - generates and exports maps with Patch ID and Area of each patch
-  - generatics statistics - Area per patch (if calcStatistics == True)
-  """
+  Function functional_connectivity
   
-  Listmapspatch = prefix+mapHABITAT_Single
+  This function used input maps and values of gaps an organism can cross to calculate maps of functional
+  connected area, complete functional connected area (if functional_area_complete == True), 
+  and functional connectivity (if functional_connec == True). All values are in hectares,
+  given the projection uses meters. The default is to calculate only functionally connected area maps.
+  - Funtional connected area: each habitat pixel presents a value equals to the sum of all area of all patches
+  functionally connected to it.
+  - Complete funtional connected area: each habitat pixel presents a value equals to the sum of all area of all patches
+  functionally connected to it, plus the surrounding distance in the matrix, defined by the gap crossing distance.
+  - Functional connecitivity: each habitat pixel presents a value equals to the sum of all area of all patches
+  functionally connected to it, minus the size of the habitat patch it is part of.
+  It is the same as the map of functional area minus the map of patch size.
+  
+  Input:
+  input_maps: list with strings; a python list with maps loaded in the GRASS GIS location. Must be binary class maps (e.g. maps of habitat-non habitat).
+  list_gap_crossing: list with numbers; each value correpond to a distance an organism can cross in the matrix; all habitat patches whose distance is <= this gap crossing distance are considered functionally connected.
+  zero: (True/False) logical; if True, non-habitat values are set to zero; otherwise, they are set as null values.
+  diagonal: (not used yet) (True/False) logical; if True, cells are clumped also in the diagonal for estimating patch size.
+  functional_connec: (True/False) logical; if True, the functional connectivity map is calculated. If gap crossing == 0 is not present in the list of gap crossings, it is added to generate these functional connectivity maps
+  functional_area_complete: (True/False) logical; if True, maps of complete functional connectivity area are also generated.
+  prepare_biodim: (True/False) logical; if True, maps and input text files for running BioDIM package are prepared.
+  calc_statistics: (True/False) logical; if True, statistics are calculated and saved as an output text file.
+  remove_trash: (True/False) logical; if True, maps generated in the middle of the calculation are deleted; otherwise they are kept within GRASS.
+  prefix: string; a prefix to be appended in the beginning of the output map names.
+  add_counter_name: (True/False) logical; if True, a number is attached to the beginning of each outputmap name, in the order of the input, following 0001, 0002, 0003 ...
+  export: (True/False) logical; if True, the maps are exported from GRASS.
+  export_pid: (True/False) logical; if True, the fragment ID (fid) maps are exported from GRASS.
+  dirout: string; folder where the output maps will be saved when exported from GRASS. If '', the output maps are generated but are not exported from GRASS.
 
-  grass.run_command('g.region', rast=mapHABITAT_Single)
-  listescalafconM, listmeters = escala_con(mapHABITAT_Single, escala_frag_con)
+  Output:
+  For default, only functionally connected area maps are calculated. If functional_connec == True, functional connectivity
+  maps are also calculated. If functional_area_complete, maps of complete functionally connected area are also calculated.
+  If prepare_biodim == True, a file with fragment size maps to run BioDIM is generated.
+  If calc_statistics == True, a file with area per fragment in hectares is generated.
+  """  
   
-  x=0
-  for a in listescalafconM:
-    meters = int(listmeters[x])
-    grass.run_command('r.neighbors', input=mapHABITAT_Single, output=Listmapspatch+"_dila_"+`meters`+'m_orig', method='maximum', size=a, overwrite = True)
-    expression=Listmapspatch+"_dila_"+`meters`+'m_orig_temp = if('+Listmapspatch+"_dila_"+`meters`+'m_orig == 0, null(), '+Listmapspatch+"_dila_"+`meters`+'m_orig)'
-    grass.mapcalc(expression, overwrite = True, quiet = True)
-    grass.run_command('r.clump', input=Listmapspatch+"_dila_"+`meters`+'m_orig_temp', output=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', overwrite = True)
-    espressao1=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata = '+mapHABITAT_Single+'*'+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid'
-    grass.mapcalc(espressao1, overwrite = True, quiet = True)
-    espressao2=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid = if('+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata > 0, '+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata, null())'
-    grass.mapcalc(espressao2, overwrite = True, quiet = True)
-    
-    nametxtreclass=rulesreclass(Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', dirout)
-    grass.run_command('r.reclass', input=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', output=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA', rules=nametxtreclass, overwrite = True)
-    os.remove(nametxtreclass)
-    
-    if prepareBIODIM:
-      #grass.run_command('r.out.gdal',input=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid',out=Listmapspatch+"_dila_"+`meters`+'m_clean_PID.tif')
-      create_TXTinputBIODIM([Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid'], "simulados_HABMAT_grassclump_dila_"+`meters`+"m_clean_PID", dirout)
-      create_TXTinputBIODIM([Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA'], "simulados_HABMAT_grassclump_dila_"+`meters`+"m_clean_AREApix",dirout)      
-      
-      ########### calculando o area complete, exportanto ele e tb PID complete - precisa tambem gerar um area complete mesmo?
-      nametxtreclass=rulesreclass(Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid',dirout)
-      grass.run_command('r.reclass', input=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', output=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_complete_AreaHA', rules=nametxtreclass, overwrite = True)
-      os.remove(nametxtreclass)
-      #grass.run_command('r.out.gdal', input=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_complete_AreaHA', out=Listmapspatch+"_dila_"+`meters`+'m_complete_AreaHA.tif')  
-      #grass.run_command('r.out.gdal', input=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', out=Listmapspatch+"_dila_"+`meters`+'m_complete_PID.tif')
-      create_TXTinputBIODIM([Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid'], "simulados_HABMAT_grassclump_dila_"+`meters`+"m_complete_PID", dirout)
-      create_TXTinputBIODIM([Listmapspatch+"_dila_"+`meters`+'m_orig_clump_complete_AreaHA'], "simulados_HABMAT_grassclump_dila_"+`meters`+"m_complete_AREApix", dirout)      
-    else:
-      grass.run_command('g.region', rast=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA')
-      grass.run_command('r.out.gdal', input=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA', out=Listmapspatch+"_dila_"+`meters`+'m_clean_AreaHA.tif',overwrite = True)     
-    
-    if calcStatistics:
-      createtxt(Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', dirout, Listmapspatch+"_dila_"+`meters`+"m_clean_AreaHA") # clean
-      createtxt(Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', dirout, Listmapspatch+"_dila_"+`meters`+"m_complete_AreaHA") # complete
-      
-    if removeTrash:
-      if prepareBIODIM:
-        txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_temp', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata']
-      else:
-        txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_temp', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata']
-      for txt in txts:
-        grass.run_command('g.remove', type="raster", name=txt, flags='f')
-           
-    x=x+1
-
-def areacon(Listmapspatch, prefix,escala_frag_con,dirout,prepareBIODIM,calcStatistics,removeTrash):
-  """
-  Function for a series of maps
-  This function calculates functional patch area in a map (CON), considering functional connectivity 
-  (dilatation of edges given input scales/distances), and:
-  - generates and exports maps with Patch ID and Area of each patch
-  - generatics statistics - Area per patch (if calcStatistics == True)
-  """
+  # If we ask to export something but we do not provide an output folder, it shows a warning
+  if (export or prepare_biodim or calc_statistics) and dirout == '':
+    warnings.warn("You are trying to export files from GRASS but we did not set an output folder.")
   
-  if prepareBIODIM:
-    esc, met = escala_con(Listmapspatch[0], escala_frag_con)
-    # maps clean
-    lista_maps_pid_clean = np.empty((len(Listmapspatch), len(esc)), dtype=np.dtype('a200'))
-    lista_maps_area_clean = np.empty((len(Listmapspatch), len(esc)), dtype=np.dtype('a200'))
-    # maps complete
-    lista_maps_pid_comp = np.empty((len(Listmapspatch), len(esc)), dtype=np.dtype('a200'))
-    lista_maps_area_comp = np.empty((len(Listmapspatch), len(esc)), dtype=np.dtype('a200'))        
+  # If we want to calculate functional connectivity, we need a map for gap crossing = 0
+  # Check if 0 is in the the list; if not or if it is but not in the beginning, add it to the beginning
+  list_gap_cross = [float(i) for i in list_gap_crossing] # making sure values are float
+  if functional_connec:
+    if 0 in list_gap_cross and list_gap_cross[0] != 0:
+      list_gap_cross.remove(0)
+      list_gap_cross.insert(0, 0)
+    elif not (0 in list_gap_cross):
+      list_gap_cross.insert(0, 0)
   
+  # If prepare_biodim == True, lists of map names of Fragment ID and area are initialized
+  # Theses lists here are matrices with input maps in rows and edge depths in columns  
+  if prepare_biodim:
+    # Functional connected area (clean) maps are always saved
+    lista_maps_pid_clean = np.empty((len(input_maps), len(list_gap_cross)), dtype=np.dtype('a200'))
+    lista_maps_area_clean = np.empty((len(input_maps), len(list_gap_cross)), dtype=np.dtype('a200'))
+    
+    # If functional_area_complete == True, these maps are also saved as BioDIM input
+    if functional_area_complete:
+      lista_maps_pid_comp = np.empty((len(input_maps), len(list_gap_cross)), dtype=np.dtype('a200'))
+      lista_maps_area_comp = np.empty((len(input_maps), len(list_gap_cross)), dtype=np.dtype('a200'))      
+  
+  # Initialize counter of map name for lists of map names
   z = 0
+  
+  # Initialize counter, in case the user wants to add a number to the map name
   cont = 1
-  for i_in in Listmapspatch:
+  
+  # For each map in the list of input maps
+  for i_in in input_maps:
     
-    if prefix == '':
+    # Putting (or not) a prefix in the beginning of the output map name
+    if not add_counter_name:
       pre_numb = ''
-    else:
-      if cont <= 9:
-        pre_numb = "000"+`cont`+'_'
-      elif cont <= 99:
-        pre_numb = "00"+`cont`+'_'
-      elif cont <= 999:        
-        pre_numb = "0"+`cont`+'_'
-      else: 
-        pre_numb = `cont`+'_'
+    else: # adding numbers in case of multiple maps
+      pre_numb = '00000'+`cont`+'_'
+      pre_numb = pre_numb[-5:]
       
+    # Prefix of the output
     i = prefix+pre_numb+i_in
     
-    grass.run_command('g.region', rast=i_in)
-    listescalafconM, listmeters = escala_con(i_in, escala_frag_con)
+    # Define the region
+    grass.run_command('g.region', rast = i_in)
     
+    # Calculate gap crossing distances in number of pixels, based on input values in meters
+    list_dilatate_meters, list_dilatate_pixels = connectivity_scales(input_map = i_in, list_gap_crossing = list_gap_cross)
+    
+    # Initialize counter of gap crossing value for lists of map names
     x = 0
-    for a in listescalafconM:
-      meters = int(listmeters[x])    
-      grass.run_command('r.neighbors', input=i_in, output=i+"_dila_"+`meters`+'m_orig', method='maximum', size=a, overwrite = True)
-      expression=i+"_dila_"+`meters`+'m_orig_temp = if('+i+"_dila_"+`meters`+'m_orig == 0, null(), '+i+"_dila_"+`meters`+'m_orig)'
-      grass.mapcalc(expression, overwrite = True, quiet = True)      
-      grass.run_command('r.clump', input=i+"_dila_"+`meters`+'m_orig_temp', output=i+"_dila_"+`meters`+'m_orig_clump_pid', overwrite = True)
-      espressao1=i+"_dila_"+`meters`+'m_orig_clump_mata = '+i_in+'*'+i+"_dila_"+`meters`+'m_orig_clump_pid'
-      grass.mapcalc(espressao1, overwrite = True, quiet = True)
-      espressao2=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid = if('+i+"_dila_"+`meters`+'m_orig_clump_mata > 0, '+i+"_dila_"+`meters`+'m_orig_clump_mata, null())'
-      grass.mapcalc(espressao2, overwrite = True, quiet = True)
-      nametxtreclass=rulesreclass(i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', dirout)
-      grass.run_command('r.reclass', input=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', output=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA', rules=nametxtreclass, overwrite = True)
-      os.remove(nametxtreclass)
+    
+    # For each value in the list of gap crossing distances
+    for a in list_dilatate_pixels:
       
-      ############### no biodim eh HABMAT_grassclump_dila01_clean_AREApix.tif (ou complete, abaixo)
-      ########## exportando o PID clean
-      if prepareBIODIM:
-        #grass.run_command('r.out.gdal', input=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', out=i+"_dila_"+`meters`+'m_clean_PID.tif')
-        lista_maps_pid_clean[z,x] = i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid'
-        lista_maps_area_clean[z,x] = i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA'        
+      meters = int(2*list_dilatate_meters[x])  # should we use the input list_gap_cross instead? only list_gap_cross[x]  
+      
+      # Prefix for map names regarding scale
+      format_escale_name = '0000'+`meters`
+      format_escale_name = format_escale_name[-4:]
         
-        ########### calculando o area complete, exportanto ele e tb PID complete - precisa tambem gerar um area complete mesmo?
-        nametxtreclass=rulesreclass(i+"_dila_"+`meters`+'m_orig_clump_pid', dirout)
-        grass.run_command('r.reclass', input=i+"_dila_"+`meters`+'m_orig_clump_pid', output=i+"_dila_"+`meters`+'m_orig_clump_complete_AreaHA', rules=nametxtreclass, overwrite = True)
-        os.remove(nametxtreclass)  
-        #grass.run_command('r.out.gdal', input=i+"_dila_"+`meters`+'m_orig_clump_complete_AreaHA', out=i+"_dila_"+`meters`+'m_complete_AreaHA.tif')            
-        #grass.run_command('r.out.gdal', input=i+"_dila_"+`meters`+'m_orig_clump_pid', out=i+"_dila_"+`meters`+'m_complete_PID.tif')
-        lista_maps_pid_comp[z,x] = i+"_dila_"+`meters`+'m_orig_clump_pid'
-        lista_maps_area_comp[z,x] = i+"_dila_"+`meters`+'m_orig_clump_complete_AreaHA'
-  
-      else:
-        grass.run_command('g.region', rast=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA')
-        grass.run_command('r.out.gdal', input=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA', out=i+"_dila_"+`meters`+'m_clean_AreaHA.tif',overwrite = True)
-            
-      if calcStatistics:
-        createtxt(i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', dirout, i+"_dila_"+`meters`+"m_clean_AreaHA")
-        createtxt(i+"_dila_"+`meters`+'m_orig_clump_pid', dirout, i+"_dila_"+`meters`+"m_complete_AreaHA")
+      # Uses a moving window to dilatate/enlarge habitat patches, by considering the maximum value within a window
+      grass.run_command('r.neighbors', input = i_in, output = i+"_dila_"+format_escale_name+'m_orig', method = 'maximum', size = a, overwrite = True)
       
-      if removeTrash:
-        if prepareBIODIM:
-          txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_temp', i+"_dila_"+`meters`+'m_orig_clump_mata']
+      # Set zero values as null
+      expression1 = i+"_dila_"+format_escale_name+'m_orig_temp = if('+i+"_dila_"+format_escale_name+'m_orig == 0, null(), '+i+"_dila_"+format_escale_name+'m_orig)'
+      grass.mapcalc(expression1, overwrite = True, quiet = True)
+      
+      # Clump pixels that are contiguous in the same functionally connected patch ID - the complete PID with matrix pixels
+      grass.run_command('r.clump', input = i+"_dila_"+format_escale_name+'m_orig_temp', output = i+"_"+format_escale_name+'m_func_connect_complete_pid', overwrite = True)
+      
+      # Take only values within the original habitat
+      expression2 = i+"_"+format_escale_name+'m_func_connect_complete_pid_habitat = '+i_in+'*'+i+"_"+format_escale_name+'m_func_connect_complete_pid'
+      grass.mapcalc(expression2, overwrite = True, quiet = True)
+      
+      # Transform no habitat values in null() - this is the clean patch ID for functionally connected patches
+      expression3 = i+"_"+format_escale_name+'m_func_connect_pid = if('+i+"_"+format_escale_name+'m_func_connect_complete_pid_habitat > 0, '+i+"_"+format_escale_name+'m_func_connect_complete_pid_habitat, null())'
+      grass.mapcalc(expression3, overwrite = True, quiet = True)
+      
+      # Reclass pixel id values by calculating the area in hectares
+      if dirout != '':
+        os.chdir(dirout) # folder to save temp reclass file
+      # Define region
+      grass.run_command('g.region', rast = i+"_"+format_escale_name+'m_func_connect_pid')      
+      
+      # If zero == False (non-habitat cells are considered null)
+      if zero == False:        
+        nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_pid', outputfolder = '.')
+        grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_pid', output = i+"_"+format_escale_name+'m_func_connect_AreaHA', rules = nametxtreclass, overwrite = True)
+        os.remove(nametxtreclass)
+      else: # If zero == True (non-habitat cells are considered as zeros)
+        nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_pid', outputfolder = '.')
+        grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_pid', output = i+"_"+format_escale_name+'m_func_connect_AreaHA_aux', rules = nametxtreclass, overwrite = True)
+        os.remove(nametxtreclass)
+        
+        # Transforms what is 1 in the binary map into the patch size
+        expression4 = i+"_"+format_escale_name+'m_func_connect_AreaHA = if('+i_in+' == 0, 0, '+i+'_'+format_escale_name+'m_fragment_AreaHA_aux)'
+        grass.mapcalc(expression4, overwrite = True)
+      
+      # Save the name of the functional area map in case the gap crossing == 0:
+      if list_gap_cross[x] == 0:
+        name_map_gap_crossing_0 = i+"_"+format_escale_name+'m_func_connect_AreaHA'
+        
+      # If functional_area_complete == True, the area of complete maps (dilatated maps, considering the matrix pixels) is also calculated
+      if functional_area_complete and list_gap_cross[x] != 0:
+        
+        # If zero == False (non-habitat cells are considered null)
+        if zero == False:          
+          nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_complete_pid', '.')
+          grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output=i+"_"+format_escale_name+'m_func_connect_complete_AreaHA', rules=nametxtreclass, overwrite = True)
+          os.remove(nametxtreclass)
+        else: # If zero == True (non-habitat cells are considered as zeros)
+          nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_complete_pid', '.')
+          grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output=i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux', rules=nametxtreclass, overwrite = True)
+          os.remove(nametxtreclass)
+      
+          # Transforms what is 1 in the binary map into the patch size
+          expression5 = i+"_"+format_escale_name+'m_func_connect_complete_AreaHA = if('+i_in+' == 0, 0, '+i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux)'
+          grass.mapcalc(expression5, overwrite = True)      
+      
+      # If functional_connect == True, calculate map of functional connectivity
+      # This map equals functional_area - funcional_area(gap_crossing == 0)
+      if functional_connec and list_gap_cross[x] != 0:
+        
+        # Should we check here or somewhere if the map for gap crossing == 0 was really generated?
+        expression6 = i+'_'+format_escale_name+'m_functional_connectivity = '+i+'_'+format_escale_name+'m_func_connect_AreaHA - '+name_map_gap_crossing_0
+        grass.mapcalc(expression6, overwrite = True)         
+      
+      # If prepare_biodim == True, the list of map names is updated
+      if prepare_biodim:
+        lista_maps_pid_clean[z,x] = i+"_"+format_escale_name+'m_func_connect_pid'
+        lista_maps_area_clean[z,x] = i+"_"+format_escale_name+'m_func_connect_AreaHA'        
+        
+        # If functional_area_complete == True, these maps are also saved as BioDIM input
+        if functional_area_complete:
+            lista_maps_pid_comp[z,x] = i+"_"+format_escale_name+'m_func_connect_complete_pid'
+            lista_maps_area_comp[z,x] = i+"_"+format_escale_name+'m_func_connect_complete_AreaHA'            
+  
+      # If export == True and dirout == '', the map is not exported; in other cases, the map is exported in this folder
+      # For gap crossing == 0, maps are not exported
+      if export == True and dirout != '' and list_gap_cross[x] != 0:
+        os.chdir(dirout) 
+        grass.run_command('g.region', rast = i+"_"+format_escale_name+'m_func_connect_AreaHA')
+        grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+'m_func_connect_AreaHA', output = i+"_"+format_escale_name+'m_func_connect_AreaHA.tif', overwrite = True)
+        
+        # If functional_area_complete == True, these maps are also exported
+        if functional_area_complete:        
+          grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+'m_func_connect_complete_AreaHA', output = i+"_"+format_escale_name+'m_func_connect_complete_AreaHA.tif', overwrite = True)
+          
+        # If functional_connec == True, the functional connectivity maps are also exported
+        if functional_connec:
+          grass.run_command('r.out.gdal', input = i+'_'+format_escale_name+'m_functional_connectivity', output = i+'_'+format_escale_name+'m_functional_connectivity.tif', overwrite = True)
+      
+      # If export_fid == True, the fragment ID map is exported in this folder
+      if export_pid == True and dirout != '':
+        os.chdir(dirout)
+        grass.run_command('g.region', rast = i+"_"+format_escale_name+'m_func_connect_pid')
+        grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+'m_func_connect_pid', output = i+"_"+format_escale_name+'m_func_connect_pid.tif', overwrite = True)
+        
+        # If functional_area_complete == True, these maps are also exported
+        if functional_area_complete and list_gap_cross[x] != 0:        
+          grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output = i+"_"+format_escale_name+'m_func_connect_complete_pid.tif', overwrite = True)
+            
+      # If calc_statistics == True, the stats of this metric are calculated and exported
+      if calc_statistics:
+        createtxt(i+"_"+format_escale_name+'m_func_connect_pid', outputfolder = dirout, filename = i+"_"+format_escale_name+'m_func_connect_AreaHA')
+        # If functional_area_complete == True, these statistics are also calculated
+        if functional_area_complete:          
+          createtxt(i+"_"+format_escale_name+'m_func_connect_complete_pid', outputfolder = dirout, filename = i+"_"+format_escale_name+'m_func_connect_complete_AreaHA')
+      
+      # If remove_trash == True, the intermediate maps created in the calculation of patch size are removed
+      if remove_trash:
+        # Define list of maps
+        if functional_area_complete and list_gap_cross[x] != 0:
+          txts = [i+"_dila_"+format_escale_name+'m_orig', i+"_dila_"+format_escale_name+'m_orig_temp', i+"_"+format_escale_name+'m_func_connect_complete_pid_habitat']
         else:
-          txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_temp', i+"_dila_"+`meters`+'m_orig_clump_pid', i+"_dila_"+`meters`+'m_orig_clump_mata'] #, i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid']
+          txts = [i+"_dila_"+format_escale_name+'m_orig', i+"_dila_"+format_escale_name+'m_orig_temp', i+"_"+format_escale_name+'m_func_connect_complete_pid', i+"_"+format_escale_name+'m_func_connect_complete_pid_habitat'] #, i+"_"+format_escale_name+'m_func_connect_pid']
+        if zero == True:
+          txts.append(i+"_"+format_escale_name+'m_func_connect_AreaHA_aux')
+          if functional_area_complete and list_gap_cross[x] != 0:
+            txts.append(i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux')
+        # Remove maps from GRASS GIS location     
         for txt in txts:
           grass.run_command('g.remove', type='raster', name=txt, flags='f')
-          
-      x=x+1
-    z=z+1
+      
+      # Update counter columns (gap crossing values)    
+      x = x + 1
+    
+    # Update counter rows (map names)  
+    z = z + 1
+    
+    # Update counter for map names
     cont += 1
     
-  if prepareBIODIM:
-    for i in range(len(met)):
-      mm = int(met[i])
-      create_TXTinputBIODIM(lista_maps_pid_clean[:,i].tolist(), "simulados_HABMAT_grassclump_dila_"+`mm`+"m_clean_PID", dirout)
-      create_TXTinputBIODIM(lista_maps_area_clean[:,i].tolist(), "simulados_HABMAT_grassclump_dila_"+`mm`+"m_clean_AREApix", dirout)   
-
-      create_TXTinputBIODIM(lista_maps_pid_comp[:,i].tolist(), "simulados_HABMAT_grassclump_dila_"+`mm`+"m_complete_PID", dirout)
-      create_TXTinputBIODIM(lista_maps_area_comp[:,i].tolist(), "simulados_HABMAT_grassclump_dila_"+`mm`+"m_complete_AREApix", dirout)  
+  # If prepare_biodim == True, use the list of output map names to create a text file and export it, for each scale
+  if prepare_biodim:
+    # For each value in the list of gap crossing
+    for i in range(len(list_gap_cross)):
+      # Create a text file as BioDIM input
+      mm = int(list_gap_cross[i])
+      if mm != 0: # Do not export for gap crossing == 0
+        create_TXTinputBIODIM(lista_maps_pid_clean[:,i].tolist(), outputfolder = dirout, filename = "simulados_HABMAT_grassclump_dila_"+`mm`+"m_clean_PID")
+        create_TXTinputBIODIM(lista_maps_area_clean[:,i].tolist(), outputfolder = dirout, filename = "simulados_HABMAT_grassclump_dila_"+`mm`+"m_clean_AREApix")
+        # If functional_area_complete == True, these statistics are also calculated
+        if functional_area_complete:
+          create_TXTinputBIODIM(lista_maps_pid_comp[:,i].tolist(), outputfolder = dirout, filename = "simulados_HABMAT_grassclump_dila_"+`mm`+"m_complete_PID")
+          create_TXTinputBIODIM(lista_maps_area_comp[:,i].tolist(), outputfolder = dirout, filename = "simulados_HABMAT_grassclump_dila_"+`mm`+"m_complete_AREApix")                      
       
       
 #----------------------------------------------------------------------------------
@@ -989,87 +1281,15 @@ def mapcalcED(expression):
   """
   grass.mapcalc(expression, overwrite = True, quiet = True)        
 
-def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix,calcStatistics,removeTrash,escale_pct):
-  """
-  Function for a single map
-  This function separates habitat area into edge and interior/core regions, given a scale/distance defined as edge, and:
-  - generates and exports maps with each region
-  - generatics statistics - Area per region (matrix/edge/core) (if calcStatistics == True)
-  """  
-  os.chdir(dirs)
-  ListmapsED = prefix+ListmapsED_in
-  
-  grass.run_command('g.region', rast=ListmapsED_in)
-  listsize, listmeters = escala_frag(ListmapsED_in, escale_ed)
-  
-  cont_escale=0
-  for i in listsize:
-    apoioname = int(listmeters[cont_escale])  
-    formatnumber='0000'+`apoioname`
-    formatnumber=formatnumber[-4:]
-    outputname_meco=ListmapsED+'_MECO_'+formatnumber+'m' # nome de saida do mapa edge-core-matriz
-    outputname_core=ListmapsED+'_CORE_'+formatnumber+'m' # nome de saida do mapa Core
-    outputname_edge=ListmapsED+'_EDGE_'+formatnumber+'m' # nome de saida do mapa edge
+   
     
-    
-    grass.run_command('r.neighbors', input=ListmapsED_in, output=ListmapsED+"_eroED_"+`apoioname`+'m', method='minimum', size=i, overwrite = True)
-    inputs=ListmapsED+"_eroED_"+`apoioname`+'m,'+ListmapsED_in
-    out=ListmapsED+'_EDGE'+`apoioname`+'m_temp1'
-    grass.run_command('r.series', input=inputs, out=out, method='sum', overwrite = True)
-    espressaoEd=ListmapsED+'_EDGE'+`apoioname`+'m_temp2 = int('+ListmapsED+'_EDGE'+`apoioname`+'m_temp1)' # criando uma mapa inteiro
-    mapcalcED(espressaoEd)
-    
-    espressaoclip=outputname_meco+'= if('+ListmapsED_in+' >= 0, '+ListmapsED+'_EDGE'+`apoioname`+'m_temp2, null())'
-    mapcalcED(espressaoclip)  
-    
-    espressaocore=outputname_core+'= if('+outputname_meco+'==2,1,0)'
-    grass.mapcalc(espressaocore, overwrite = True, quiet = True)     
-    
-    espressaoedge=outputname_edge+'= if('+outputname_meco+'==1,1,0)'
-    grass.mapcalc(espressaoedge, overwrite = True, quiet = True)  
-    
-    
-     
-    grass.run_command('r.out.gdal', input=outputname_meco, out=outputname_meco+'.tif', overwrite = True) 
-    grass.run_command('r.out.gdal', input=outputname_edge, out=outputname_edge+'.tif', overwrite = True)
-    grass.run_command('r.out.gdal', input=outputname_core, out=outputname_core+'.tif', overwrite = True)
-    print '>>>>>>>>>>>>>>>>>>>>',escale_pct
-    if len(escale_pct)>0:
-      for pct in escale_pct:
-        pctint=int(pct)
-
-        formatnumber='0000'+`pctint`
-        formatnumber=formatnumber[-4:]        
-        outputname_edge_pct=outputname_edge+'_PCT_esc_'+formatnumber
-        
-        size=getsizepx(outputname_edge, pctint)
-        grass.run_command('r.neighbors', input=outputname_edge, output="temp_pct", method='average', size=size, overwrite = True)
-        espressaoedge=outputname_edge_pct+'=temp_pct*100'
-        grass.mapcalc(espressaoedge, overwrite = True, quiet = True)    
-        grass.run_command('r.out.gdal', input=outputname_edge_pct, out=outputname_edge_pct+'.tif', overwrite = True)
-        grass.run_command('g.remove', type="raster", name='temp_pct', flags='f')
-        
-        
-        
-        
-        
-    if calcStatistics:
-      createtxt(ListmapsED+'_EDGE'+`apoioname`+'m', dirs, out)
-      
-      
-    if removeTrash:
-      grass.run_command('g.remove', type="raster", name=ListmapsED+"_eroED_"+`apoioname`+'m,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp1,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp2', flags='f')
-    
-    cont_escale=cont_escale+1
-    
-    
-def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash,escale_pct,checkCalc_PCTedge):
+def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calc_statistics,remove_trash,escale_pct,checkCalc_PCTedge):
   os.chdir(dirs)
   """
   Function for a series of maps
   This function separates habitat area into edge and interior/core regions, given a scale/distance defined as edge, and:
   - generates and exports maps with each region
-  - generatics statistics - Area per region (matrix/edge/core) (if calcStatistics == True)
+  - generatics statistics - Area per region (matrix/edge/core) (if calc_statistics == True)
   """
   
   cont = 1
@@ -1144,10 +1364,10 @@ def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash,e
           grass.run_command('r.out.gdal', input=outputname_edge_pct, out=outputname_edge_pct+'.tif', overwrite = True)
           grass.run_command('g.remove', type="raster", name='temp_pct', flags='f')     
             
-      if calcStatistics:
+      if calc_statistics:
         createtxt(outputname_meco, i+'_EDGE'+`apoioname`+'m_temp1')
       
-      if removeTrash:
+      if remove_trash:
         grass.run_command('g.remove', type="raster", name=i+"_eroED_"+`apoioname`+'m,'+i+'_EDGE'+`apoioname`+'m_temp1,'+i+'_EDGE'+`apoioname`+'m_temp2,'+i+'_EDGE'+`apoioname`+'m_temp3', flags="f")
       
       cont_escale +=1
@@ -1163,37 +1383,9 @@ def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash,e
 #----------------------------------------------------------------------------------
 # Metrics for distance to edges
     
-def dist_edge_Single(Listmapsdist_in, prefix,prepareBIODIM, dirout,removeTrash):
-  """
-  Function for a single map
-  This function calculates the distance of each pixel to habitat edges, considering
-  negative values (inside patches) and positive values (into the matrix). Also:
-  - generates and exports maps of distance to edge (DIST)
-  """
 
-  Listmapsdist = prefix+Listmapsdist_in
-  
-  grass.run_command('g.region', rast=Listmapsdist_in)
-  expression1=Listmapsdist+'_invert = if('+Listmapsdist_in+' == 0, 1, null())'
-  grass.mapcalc(expression1, overwrite = True, quiet = True)
-  grass.run_command('r.grow.distance', input=Listmapsdist+'_invert', distance=Listmapsdist+'_invert_forest_neg_eucldist',overwrite = True)
-  expression2=Listmapsdist+'_invert_matrix = if('+Listmapsdist_in+' == 0, null(), 1)'
-  grass.mapcalc(expression2, overwrite = True, quiet = True)
-  grass.run_command('r.grow.distance', input=Listmapsdist+'_invert_matrix', distance=Listmapsdist+'_invert_matrix_pos_eucldist',overwrite = True)
-  expression3=Listmapsdist+'_dist = '+Listmapsdist+'_invert_matrix_pos_eucldist-'+Listmapsdist+'_invert_forest_neg_eucldist'
-  grass.mapcalc(expression3, overwrite = True, quiet = True)
-  
-  if prepareBIODIM:
-    create_TXTinputBIODIM([Listmapsdist+'_dist'], "simulados_HABMAT_DIST", dirout)
-  else:
-    grass.run_command('r.out.gdal', input=Listmapsdist+'_dist', out=Listmapsdist+'_DIST.tif', overwrite = True)
-    
-  if removeTrash:
-    txts = [Listmapsdist+'_invert', Listmapsdist+'_invert_forest_neg_eucldist', Listmapsdist+'_invert_matrix', Listmapsdist+'_invert_matrix_pos_eucldist']
-    for txt in txts:
-      grass.run_command('g.remove', type="raster", name=txt, flags='f')
 
-def dist_edge(Listmapsdist_in, prefix,prepareBIODIM, dirout,removeTrash):
+def dist_edge(Listmapsdist_in, prefix,prepare_biodim, dirout,remove_trash):
   """
   Function for a series of maps
   This function calculates the distance of each pixel to habitat edges, considering
@@ -1201,7 +1393,7 @@ def dist_edge(Listmapsdist_in, prefix,prepareBIODIM, dirout,removeTrash):
   - generates and exports maps of distance to edge (DIST)
   """
 
-  if prepareBIODIM:
+  if prepare_biodim:
     lista_maps_dist=[]    
   
   cont = 1
@@ -1231,48 +1423,23 @@ def dist_edge(Listmapsdist_in, prefix,prepareBIODIM, dirout,removeTrash):
     expression3=i+'_dist = '+i+'_invert_matrix_pos_eucldist-'+i+'_invert_forest_neg_eucldist'
     grass.mapcalc(expression3, overwrite = True, quiet = True)
     
-    if prepareBIODIM:
+    if prepare_biodim:
       lista_maps_dist.append(i+'_dist')
     else:
       grass.run_command('r.out.gdal', input=i+'_dist', out=i+'_DIST.tif', overwrite = True)
       
-    if removeTrash:
+    if remove_trash:
       txts = [i+'_invert', i+'_invert_forest_neg_eucldist', i+'_invert_matrix', i+'_invert_matrix_pos_eucldist']
       for txt in txts:
         grass.run_command('g.remove', type="raster", name=txt, flags='f')
     
     cont += 1
     
-  if prepareBIODIM:
-    create_TXTinputBIODIM(lista_maps_dist, "simulados_HABMAT_DIST", dirout)
+  if prepare_biodim:
+    create_TXTinputBIODIM(lista_maps_dist, dirout, "simulados_HABMAT_DIST")
     
 #----------------------------------------------------------------------------------
-# funcao de pcts
-def PCTs_single(mapbin_HABITAT,escales):
-  for i in escales:
-    esc=int(i)
-    outputname=mapbin_HABITAT+"_PCT_esc_"+`esc`
-    windowsize=getsizepx(mapbin_HABITAT, esc)
-    grass.run_command('g.region', rast=mapbin_HABITAT)
-    grass.run_command('r.neighbors',input=mapbin_HABITAT,out="temp_PCT",method='average',size=windowsize,overwrite = True )
-    expression1=outputname+'=temp_PCT*100'
-    grass.mapcalc(expression1, overwrite = True, quiet = True)    
-    grass.run_command('r.out.gdal', input=outputname, out=outputname+'.tif', overwrite = True)
-    grass.run_command('g.remove', type="raster", name='temp_PCT', flags='f')
-    
-def PCTs(Listmap_HABITAT,escales):
-  for i in escales:
-    esc=int(i)
-    for mapHABT in Listmap_HABITAT:
-      outputname=mapHABT+"_PCT_esc_"+`esc`
-      windowsize=getsizepx(mapHABT, esc)
-      grass.run_command('g.region', rast=mapHABT)
-      grass.run_command('r.neighbors',input=mapHABT,out="temp_PCT",method='average',size=windowsize,overwrite = True )
-      expression1=outputname+'=temp_PCT*100'
-      grass.mapcalc(expression1, overwrite = True, quiet = True)    
-      grass.run_command('r.out.gdal', input=outputname, out=outputname+'.tif', overwrite = True)
-      grass.run_command('g.remove', type="raster", name='temp_PCT', flags='f')
-    
+
 
 #----------------------------------------------------------------------------------
 #def para diversidade de shannon
@@ -1387,17 +1554,104 @@ def shannon_diversity(landuse_map,dirout,Raio_Analise):
     os.remove('landuse_map_shannon.asc')
     os.remove('landuse_map.asc')
     
+
+
 #----------------------------------------------------------------------------------
-def percentage_edge():
-  pass
+def lsmetrics_run(input_maps,
+                  outputdir = '', output_prefix = '', add_counter_name = False,
+                  zero_bin = True, zero_metrics = False, use_calculated_bin = False,
+                  calcstats = False, prepare_biodim = False, remove_trash = True, 
+                  binary = False, list_habitat_classes = [], export_binary = False,
+                  calc_patch_size = False, diagonal = False, export_patch_size = False, export_patch_id = False,
+                  calc_frag_size = False, list_edge_depth_frag = [], export_frag_size = False, export_frag_id = False,
+                  struct_connec = False, export_struct_connec = False,
+                  percentage_habitat = False, list_window_size_habitat = [], method_percentage = 'average', export_percentage_habitat = False,
+                  functional_connected_area = False, list_gap_crossing = [], export_func_con_area = False, export_func_con_pid = False,
+                  functional_area_complete = False, functional_connectivity_map = False,
+                  classify_edge = False,
+                  edge_dist = False):
   
+  # Transform maps into binary class maps
+  if binary:
+                
+    bin_map_list = create_binary(input_maps, list_habitat_classes, zero = zero_bin, 
+                                 prepare_biodim = prepare_biodim, calc_statistics = calcstats, 
+                                 prefix = output_prefix, add_counter_name = add_counter_name,
+                                 export = export_binary, dirout = outputdir)
 
+  # If binary maps were created and the user wants these maps to be used to calculate metric,
+  # then the list is considered as these binary maps; otherwise, the input list of maps is considered
+  if binary and use_calculated_bin:
+    list_maps_metrics = bin_map_list
+    output_prefix = '' # If using this maps, do not repeat the output prefix
+    add_counter_name = False # If using this maps, do not add new numbers
+  else:
+    list_maps_metrics = input_maps
+  
+  # Metrics of structural connectivity
+    
+  # Patch size
+  if calc_patch_size:
+    
+    list_patch_size_pid, list_patch_size_area = patch_size(input_maps = list_maps_metrics,
+                                                           zero = zero_metrics, diagonal = diagonal, 
+                                                           prepare_biodim = prepare_biodim, calc_statistics = calcstats, remove_trash = remove_trash,
+                                                           prefix = output_prefix, add_counter_name = add_counter_name,
+                                                           export = export_patch_size, export_pid = export_patch_id, dirout = outputdir)
+  
+  # tem que checar aqui o que fazer se struc_connec = True e ele nao pede pra calcular o patch size
+  
+  # Fragment size
+  if calc_frag_size:  
+    
+    fragment_area(input_maps = list_maps_metrics, list_edge_depths = list_edge_depth_frag,
+                  zero = zero_metrics, diagonal = diagonal,
+                  struct_connec = struct_connec, patch_size_map_names = list_patch_size_area,
+                  prepare_biodim = prepare_biodim, calc_statistics = calcstats, remove_trash = remove_trash,
+                  prefix = output_prefix, add_counter_name = add_counter_name, 
+                  export = export_frag_size, export_fid = export_frag_id, dirout = outputdir)
+  
+  # Percentage of habitat
+  if percentage_habitat:
+    
+    if zero_bin == False:
+      raise Warning('You set the binary map to value 1-null and asked for a percentage of habitat map; this may cause problems in the output!')
+    
+    percentage(input_maps = list_maps_metrics, scale_list = list_window_size_habitat, method = method_percentage, append_name = '_habitat',
+               remove_trash = remove_trash, export = export_percentage_habitat, dirout = outputdir)
+    
+  # Metrics of functional connectivity
+  
+  # Functional connected area, functional complete connected area, and functional connectivity
+  if functional_connected_area or functional_connectivity_map:
+    
+    functional_connectivity(input_maps = list_maps_metrics, list_gap_crossing = list_gap_crossing,
+                            zero = zero_metrics, diagonal = diagonal,
+                            functional_connec = functional_connectivity_map,
+                            functional_area_complete = functional_area_complete,
+                            prepare_biodim = prepare_biodim, calc_statistics = calcstats, remove_trash = remove_trash,
+                            prefix = output_prefix, add_counter_name = add_counter_name, 
+                            export = export_func_con_area, export_pid = export_func_con_pid, dirout = outputdir)  
+  
+  
+    ## Calculates core-edge        
+    #if classify_edge:
+              
+      #create_EDGE_single(input_map, output_prefix2, outputdir, escala_ED, 
+                         #calcstats, remove_trash, list_esc_pct)
+    
+    ## Calculates edge distance         
+    #if edge_dist:
+      
+      #dist_edge_Single(self.input_map,self.output_prefix2, self.prepare_biodim, self.dirout, self.remove_trash)
+              
+    #if self.checPCT==True:
+      
+      #PCTs_single(self.input_map, self.list_esc_pct)
+    
+    #if self.check_diversity==True:
 
-
-
-
-
-
+      #shannon_diversity(self.input_map, self.dirout, self.analise_rayos)
 
 
 
@@ -1408,6 +1662,7 @@ def percentage_edge():
 
 class LSMetrics(wx.Panel):
     def __init__(self, parent, id):
+        
         # Initializing GUI
         wx.Panel.__init__(self, parent, id)
         
@@ -1417,63 +1672,77 @@ class LSMetrics(wx.Panel):
         # Parameters
         
         # Maps to be processed
-        self.input_map = ''
-        self.background_filename = []
+        self.input_maps = [] # List of input maps
+        
+        # For output names
+        self.outputdir = '' # path to the folder where output maps
+        self.output_prefix = '' # prefix to be appended to output map names
+        self.add_counter_name = False # whether or not to include a counter in the output map names
+        
+        # Options for outputs and processing
+        # remove_trash: If True, maps generated in the middle of the processes for creating final maps are removed from GRASS location
+        self.remove_trash = True
+        # prepare_biodim: If True, the package is run to prepare input maps and files to run BioDIM individual-based model package
+        self.prepare_biodim = False
+        # calc_statistics: If True, statistics files of the maps are saved while creating them
+        self.calc_statistics = True
+        # calc_multiple: True in case of running metrics for multiple maps, and False if running for only one map
+        self.calc_multiple = False        
         
         # Metrics to be calculated
-        self.Patch = False # Option: Patch area maps
-        self.Frag = False # Option: Core area maps (degrading patch edges)
-        self.Con = False # Option: Functional connectivity maps
-        self.Dist = False # Option: Distance from edge maps
-        self.Habmat = False # Option: Transform land use maps in binary class maps
-        self.PCT = False # Option: Generate percentage (of habitat, of edges) maps
+        self.binary = False # Option: Transform input maps into binary class maps
+        self.calc_patch_size = False # Option: Patch area maps
+        self.calc_frag_size = False # Option: Fragment area maps (removing corridors and branches)
+        self.struct_connec = False # Option: Structural connectivity maps
+        self.percentage_habitat = False # Option: Proportion of habitat
+        self.functional_connected_area = False # Option: Functionally connected area maps
+        self.functional_area_complete = False # Option: Complete functionally connected area maps
+        self.functional_connectivity_map = False # Option: Functional connectivity maps
         
-        # Options
-        # removeTrash: If True, maps generated in the middle of the processes for creating final maps are removed from GRASS location
-        self.removeTrash = True
-        # prepareBIODIM: If True, the package is run to prepare input maps and files to run BioDIM individual-based model package
-        self.prepareBIODIM = False
-        # calcStatistics: If True, statistics files of the maps are saved while creating them
-        self.calcStatistics = False
-        # formcalculate: 'Multiple' in case of running metrics for multiple maps, and 'Single' if running for only one map
-        self.formcalculate = 'Single'
+        #self.Dist = True # Option: Distance from edge maps
+        #self.PCT = True # Option: Generate percentage (of habitat, of edges) maps
         
-        # Auxiliary variables
-        self.list_habitat_classes = []
-        self.list_esc_pct = ''
+        # Options for each metric
+        
+        # For multiple
+        self.zero_bin = True # whether the binary generated will be 1/0 (True) or 1/null (False)
+        self.zero_metrics = False # whether the metrics generated will have non habitat values as 0 (True) or null (False)
+        self.use_calculated_bin = False # whether binary maps generated will use be used for calculating the other metrics
+        self.diagonal = False # whether or not to clump pixels using diagonal pixels (used for many functions)
+        # For binary maps
+        self.list_habitat_classes = [] # list of values that correspond to habitat
+        self.export_binary = False # whether or not to export generated binary maps
+        # For patch size
+        self.export_patch_size = False # whether or not to export generated patch size maps
+        self.export_patch_id = False # whether or not to export generated patch ID maps
+        # For fragment size
+        self.list_edge_depth_frag = [] # list of values of edge depth to be considered for fragmentation process
+        self.export_frag_size = False # whether or not to export generated fragment size maps
+        self.export_frag_id = False # whether or not to export generated fragment ID maps
+        # For structural connectivity
+        self.export_struct_connec = False # whether or not to export generated structural connectivity maps
+        # For percentage of habitat 
+        self.list_window_size_habitat = [] # list of window sizes to be considered for proportion of habitat
+        self.method_percentage = 'average' # method used in r.neighbors to calculate the proportion of habitat
+        self.export_percentage_habitat = False # whether or not to export generated maps of proportion of habitat
+        # Functional connectivity
+        self.list_gap_crossing = [] # list of gap crossing distances to be considered for functional connectivity
+        self.export_func_con_area = False # whether or not to export generated functional connectivity area maps
+        self.export_func_con_pid = False # whether or not to export generated functional connectivity patch ID maps
+        # For edges
+        
+        # For diversity
         
         # GUI options
         
-        # Size of the image of GUI
-        self.size = 450
-        self.hsize = 450
-        
         # List of maps to be chosen inside a mapset, in GUI
-        self.mapsList = []
-        # Chosen map to be shown in the list
+        self.map_list = []
+        # Chosen map to be shown in the list, within the GUI
         self.chosen_map = ''
-        #
-        self.petternmaps = ''
-        #
-        self.start_raio = 0
+        # Expression for looking at multiple input maps
+        self.pattern_name = ''  
         
-        # Output options
-        self.output_prefix2='' 
-        
-        self.label_prefix = ''
-        self.RegularExp = ''
-        self.listMapsPng = []
-        self.listMapsPngAux = []
-        self.contBG = 0
-        self.plotmaps = 0
-        self.lenlistpng = 0  
-        
-        self.ListmapsPatch = []
-        self.ListMapsGroupCalc = []
-        self.escala_frag_con = ''
-
-        self.escala_ED = ''
-        self.dirout = ''
+        ############ REMOVE?
         self.chebin = ''
         self.checEDGE = ''
         self.checkCalc_PCTedge = ''
@@ -1482,14 +1751,11 @@ class LSMetrics(wx.Panel):
         self.analise_rayos = ''
         self.list_meco = ''
         
-        
-        
-        
         #------------------------------------------------------#
         #---------------INITIALIZING GUI-----------------------#
         #------------------------------------------------------#
         
-        ########### ver como conversar tamanho de pixel em windows e linux
+        ########### Find out the best way to set the pixel size in Windows and Linux
         # Adjusting width of GUI elements depending on the Operational System
         if CURRENT_OS == "Windows":
           self.add_width = 0
@@ -1502,10 +1768,10 @@ class LSMetrics(wx.Panel):
         # Listing maps within the mapset, to be displayed and select as input maps
         
         # If preparing maps for running BioDIM, the maps must be inside a mapset named 'userbase'
-        if self.prepareBIODIM: 
-          self.mapsList=grass.list_grouped ('rast') ['userbase']
+        if self.prepare_biodim: 
+          self.map_list=grass.list_grouped ('rast') ['userbase']
         else:
-          self.mapsList=grass.list_grouped ('rast') [self.current_mapset]
+          self.map_list=grass.list_grouped ('rast') [self.current_mapset]
           
         #################### colocar isso de novo no final de uma rodada e atualizar o combobox - talvez o mapa
         ### gerado aparececa la!! testar!        
@@ -1515,12 +1781,11 @@ class LSMetrics(wx.Panel):
         #---------------------------------------------#
         
         # Title
-        #self.quote = wx.StaticText(self, id=-1, label = "LandScape Metrics", pos = wx.Point(20, 20))
-        
+        #self.quote = wx.StaticText(self, id=-1, label = "LandScape Metrics", pos = wx.Point(20, 20))        
         #font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD)
         #self.quote.SetForegroundColour("blue")
         #self.quote.SetFont(font)
-        #if not self.perform_tests:
+
         self.imageFile0 = 'lsmetrics_logo.png'
         im0 = Image.open(self.imageFile0)
         jpg0 = wx.Image(self.imageFile0, wx.BITMAP_TYPE_ANY).Scale(200, 82).ConvertToBitmap()
@@ -1539,69 +1804,89 @@ class LSMetrics(wx.Panel):
         #-------------- RADIO BOXES ------------------#
         #---------------------------------------------#   
       
+        # RadioBox - event 92 (single/multiple)
         # Calculate metrics for a single or multiple maps?
         self.single_multiple_maps = ['Single', 'Multiple']
-        rb = wx.RadioBox(self, 92, "Single or multiple maps?", wx.Point(20, 117), wx.DefaultSize,
-                         self.single_multiple_maps, 2, wx.RA_SPECIFY_ROWS)
+        rb1 = wx.RadioBox(self, 92, "Single or multiple maps?", wx.Point(20, 117), wx.DefaultSize,
+                          self.single_multiple_maps, 2, wx.RA_SPECIFY_ROWS)
         wx.EVT_RADIOBOX(self, 92, self.EvtRadioBox)
       
-      
+        # RadioBox - event 91 (prepare maps for BioDIM)
         # Prepare files and maps for running BioDIM individual-based model?
         self.BioDimChoice = ['No', 'Yes']
-        rb = wx.RadioBox(self, 905, "Prepare maps for BioDIM?", wx.Point(20, 195), wx.DefaultSize,
-                         self.BioDimChoice, 2, wx.RA_SPECIFY_COLS)
-        wx.EVT_RADIOBOX(self, 905, self.EvtRadioBox)                   
+        rb2 = wx.RadioBox(self, 91, "Prepare maps for BioDIM?", wx.Point(20, 195), wx.DefaultSize,
+                          self.BioDimChoice, 2, wx.RA_SPECIFY_COLS)
+        wx.EVT_RADIOBOX(self, 91, self.EvtRadioBox)                   
         
         #---------------------------------------------#
-        #-------------- STATIC TEXT ------------------#
+        #-------------- MAP SELECTION ----------------#
         #---------------------------------------------#          
         
-        # TEXT FOR OPTIONS
+        # Static text
         self.SelectMap = wx.StaticText(self, -1, "Select input map:", wx.Point(250, 112))
         
-        self.SelectMetrics = wx.StaticText(self,-1,"Regular Expression:", wx.Point(165 + self.add_width, 165))    
-  
-        self.SelectMetrics = wx.StaticText(self,-1,"Create habitat map:", wx.Point(20, 260)) # Ou binary map?
-        self.SelectMetrics = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(150 + self.add_width, 260))
+        # ComboBox - event 93 (select an input map from a combo box)
+        
+        # Maps shown when selecting a single map to calculate metrics
+        try: # Try to select the first map of the list of maps loaded in the GRASS GIS location
+          self.chosen_map = self.map_list[0]
+        except: # If there are no maps loaded
+          self.chosen_map = ''
+        
+        # ComboBox
+        self.editmap_list = wx.ComboBox(self, 93, self.chosen_map, wx.Point(165 + self.add_width, 130), wx.Size(260, -1),
+                                        self.map_list, wx.CB_DROPDOWN)
+        wx.EVT_COMBOBOX(self, 93, self.EvtComboBox)
+        ############### do we need that here???
+        wx.EVT_TEXT(self, 93, self.EvtText)              
+        
+        # Static text
+        self.SelectMetrics = wx.StaticText(self, -1, "Pattern:", wx.Point(165 + self.add_width, 165))
+        
+        # Text Control - event 190
+        # Regular expression for selecting multiple maps
+        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(260 + self.add_width, 160), wx.Size(150,-1))
+        self.editname1.Disable()
+        wx.EVT_TEXT(self, 190, self.EvtText)
+        
+        # Static text
+        self.SelectMetrics = wx.StaticText(self, -1,"Create binary map:", wx.Point(20, 250)) # Or habitat map?
+        self.SelectMetrics = wx.StaticText(self, -1,"Codes for habitat:", wx.Point(165 + self.add_width, 250))
       
-        self.SelectMetrics = wx.StaticText(self,-1,"Fragment- and patch-based metrics:", wx.Point(20, 290))
-        self.SelectMetrics = wx.StaticText(self,-1,"Connectivity map:", wx.Point(20, 320))
-        self.SelectMetrics = wx.StaticText(self,-1,"Gap crossing list (m):", wx.Point(140, 320))
+        # Static text
+        self.SelectMetrics = wx.StaticText(self, -1,"Metrics of structural connectivity:", wx.Point(20, 275))
+        self.SelectMetrics = wx.StaticText(self, -1,"Connectivity map:", wx.Point(20, 305))
+        self.SelectMetrics = wx.StaticText(self, -1,"Gap crossing list (m):", wx.Point(140, 305))
+        
+        # Static text      
+        self.SelectMetrics = wx.StaticText(self, -1,"Core/Edge map:", wx.Point(20, 308))
+        self.SelectMetrics = wx.StaticText(self, -1,"Edge depth list (m):", wx.Point(140, 308))
       
-        self.SelectMetrics = wx.StaticText(self,-1,"Core/Edge map:", wx.Point(20, 308))
-        self.SelectMetrics = wx.StaticText(self,-1,"Edge depth list (m):", wx.Point(140, 308))
+        # Static text
+        self.SelectMetrics = wx.StaticText(self, -1,"Percentage:", wx.Point(20, 348))
+        self.SelectMetrics = wx.StaticText(self, -1,"Habitat", wx.Point(90, 348))
+        self.SelectMetrics = wx.StaticText(self, -1,"Edge/Core", wx.Point(156, 348))
       
-        self.SelectMetrics = wx.StaticText(self,-1,"Percentage:", wx.Point(20, 348))
-        self.SelectMetrics = wx.StaticText(self,-1,"Habitat", wx.Point(90, 348))
-        self.SelectMetrics = wx.StaticText(self,-1,"Edge/Core", wx.Point(156, 348))
-      
-        self.SelectMetrics = wx.StaticText(self,-1,"Extents:", wx.Point(236, 348)) # para as pct
-      
-        self.SelectMetrics = wx.StaticText(self,-1,"Calculate Statistics:", wx.Point(20, 445))
-        self.SelectMetrics = wx.StaticText(self,-1,"Distance from edge map:", wx.Point(20, 375))
-      
-        self.SelectMetrics = wx.StaticText(self,-1,"Landscape diversity map:", wx.Point(20, 400))
-        self.SelectMetrics = wx.StaticText(self,-1,"Extents (m):", wx.Point(170, 400)) # para  diversidade de shannon
-      
-        #self.SelectMetrics = wx.StaticText(self,-1,"List of scales for Area Path or Area Frag Unit(m):", wx.Point(20,190))
-      
-        self.SelectMetrics = wx.StaticText(self,-1,"Export: Hab/Edge/Matrix", wx.Point(20, 448))
-        self.SelectMetrics = wx.StaticText(self,-1,"| Corridor/Branch/SS", wx.Point(170, 448))
+        # Static text
+        self.SelectMetrics = wx.StaticText(self, -1,"Extents:", wx.Point(236, 348)) # para as pct
+
+        # Static text
+        self.SelectMetrics = wx.StaticText(self, -1,"Calculate Statistics:", wx.Point(20, 445))
+        self.SelectMetrics = wx.StaticText(self, -1,"Distance from edge map:", wx.Point(20, 375))
+        
+        # Static text
+        self.SelectMetrics = wx.StaticText(self, -1,"Landscape diversity map:", wx.Point(20, 400))
+        self.SelectMetrics = wx.StaticText(self, -1,"Extents (m):", wx.Point(170, 400)) # para  diversidade de shannon
+        
+        # Static text
+        self.SelectMetrics = wx.StaticText(self, -1,"Export: Hab/Edge/Matrix", wx.Point(20, 448))
+        self.SelectMetrics = wx.StaticText(self, -1,"| Corridor/Branch/SS", wx.Point(170, 448))
         
         #---------------------------------------------#
         #-------------- COMBO BOXES ------------------#
         #---------------------------------------------#        
       
-        # Maps shown when selecting a single map to calculate metrics
-        try: # Try to select the first map of the list of maps loaded in the GRASS GIS location
-          self.chosen_map = self.mapsList[0]
-        except: # If there are no maps loaded
-          self.chosen_map = ''
-      
-        self.editmapsList = wx.ComboBox(self, 93, self.chosen_map, wx.Point(165 + self.add_width, 130), wx.Size(260, -1),
-                                        self.mapsList, wx.CB_DROPDOWN)
-        wx.EVT_COMBOBOX(self, 93, self.EvtComboBox)
-        wx.EVT_TEXT(self, 93, self.EvtText)        
+          
         
         
         #---------------------------------------------#
@@ -1614,7 +1899,8 @@ class LSMetrics(wx.Panel):
         #self.insure = wx.CheckBox(self, 95, "AH Frag.", wx.Point(143,150))
         #wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)
         
-        self.insure = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 260)) # Criando mapa de habitat botaozainho self.Habmat
+        # Check box for creating binary habitat maps
+        self.insure = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 248))
         wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)           
       
         self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 320)) # area con connectivity
@@ -1651,7 +1937,7 @@ class LSMetrics(wx.Panel):
         """
               essa funcao a baixo eh o botao para saber se vai ou nao calcular a statistica para os mapas
               """
-        self.insure = wx.CheckBox(self, 98, "", wx.Point(150, 445)) # self.calcStatistics botaozainho da statisica
+        self.insure = wx.CheckBox(self, 98, "", wx.Point(150, 445)) # self.calc_statistics botaozainho da statisica
         wx.EVT_CHECKBOX(self, 98,   self.EvtCheckBox)      
       
         self.insure = wx.CheckBox(self, 153, "", wx.Point(150, 448)) # export hab/edge/matrix
@@ -1666,25 +1952,23 @@ class LSMetrics(wx.Panel):
         
         # Include fast description
         
-        # Regular expression for selecting multiple maps
-        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(300 + self.add_width, 160), wx.Size(120,-1))
-        self.editname1.Disable()
+
         # List of codes that represent habitat, for generating binary class maps
-        self.editname5 = wx.TextCtrl(self, 193, '', wx.Point(290 + self.add_width, 260), wx.Size(80,-1))        
+        self.editname5 = wx.TextCtrl(self, 193, '', wx.Point(300 + self.add_width, 250), wx.Size(120,-1))        
         # List of gap crossing capability
-        self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(250 + self.add_width, 273), wx.Size(80,-1))
+        self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(300 + self.add_width, 305), wx.Size(120,-1))
         # List of edge depths
-        self.editname3 = wx.TextCtrl(self, 192, '', wx.Point(250 + self.add_width, 305), wx.Size(80,-1))
+        self.editname3 = wx.TextCtrl(self, 192, '', wx.Point(300 + self.add_width, 340), wx.Size(120,-1))
         # List of extents for percentage maps
-        self.editname4 = wx.TextCtrl(self, 194, '', wx.Point(283 + self.add_width, 341), wx.Size(80,-1))
+        self.editname4 = wx.TextCtrl(self, 194, '', wx.Point(300 + self.add_width, 371), wx.Size(120,-1))
         # List of radii on influence for calculating landscape diversity/heterogeneity
-        self.editname6 = wx.TextCtrl(self, 195, '', wx.Point(250 + self.add_width, 395), wx.Size(80,-1))
+        self.editname6 = wx.TextCtrl(self, 195, '', wx.Point(300 + self.add_width, 395), wx.Size(120,-1))
         
         #---------------------------------------------#
         #-------------- TEXT EVENTS ------------------#
         #---------------------------------------------#       
         
-        wx.EVT_TEXT(self, 190, self.EvtText)
+        
         wx.EVT_TEXT(self, 191, self.EvtText)
         wx.EVT_TEXT(self, 192, self.EvtText)
         wx.EVT_TEXT(self, 193, self.EvtText)
@@ -1701,79 +1985,51 @@ class LSMetrics(wx.Panel):
         self.button = wx.Button(self, 8, "EXIT", wx.Point(270, 630))
         wx.EVT_BUTTON(self, 8, self.OnExit)        
 
-        
-
-
-
-                
-        
-    
-        
-        
-        #______________________________________________________________________________________________________________ 
-        #backgroun inicial
-        #self.background_filename=['Pai10.png']
-        #self.background_filename_start=self.background_filename[0]
-                                
-                                                          
-        #img =Image.open(self.background_filename[0])
-      
-        ## redimensionamos sem perder a qualidade
-        #img = img.resize((self.size,self.hsize),Image.ANTIALIAS)
-        #img.save(self.background_filename[0])        
-      
-      
-        #imageFile=self.background_filename[0]
-        #im1 = Image.open(imageFile)
-        #jpg1 = wx.Image(imageFile, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-        #wx.StaticBitmap(self, -1, jpg1, (380,40), (jpg1.GetWidth(),  jpg1.GetHeight()), style=wx.SIMPLE_BORDER)        
- 
+    #______________________________________________________________________________________________________    
+    # Radio Boxes        
     def EvtRadioBox(self, event):
-      if event.GetId()==905:
-        self.prepareBIODIM=event.GetString()
-        print self.prepareBIODIM
-        if self.prepareBIODIM=="No":
-          self.prepareBIODIM=False
+      
+      # RadioBox - event 91 (prepare maps for BioDIM)
+      if event.GetId() == 91:
+        self.text_biodim = event.GetString()
+        if self.text_biodim == 'No':
+          self.prepare_biodim = False
+        elif self.text_biodim == 'Yes':
+          self.prepare_biodim = True
         else:
-          self.prepareBIODIM=True
+          raise "Error: Preparation of BioDIM maps must be either Yes or No!"
           
-      if self.prepareBIODIM:        
-        self.mapsList=grass.list_grouped ('rast') ['userbase']
-      else:
-        self.mapsList=grass.list_grouped ('rast') ['PERMANENT']      
+        # Refresh the list of possible input maps
+        if self.prepare_biodim:        
+          self.map_list = grass.list_grouped ('rast') ['userbase']
+        else:
+          self.map_list = grass.list_grouped ('rast') ['PERMANENT']      
       
-      # -----------
-      # Radio Boxes
-      
-      if event.GetId() == 92: # Single or Multiple maps?
+      # RadioBox - event 92 (single/multiple maps)
+      if event.GetId() == 92: 
+        self.text_multiple = event.GetString()
         
-        self.formcalculate = event.GetString()
-        
-        if self.formcalculate == 'Single':
-          self.editmapsList.Enable()
+        if self.text_multiple == 'Single':
+          self.calc_multiple = False
+          self.editmap_list.Enable()
           self.editname1.Disable()
-        elif self.formcalculate == 'Multiple':
-          self.editmapsList.Disable()
+        elif self.text_multiple == 'Multiple':
+          self.calc_multiple = True
+          self.editmap_list.Disable()
           self.editname1.Enable()
         else:
           raise "Error: Calculations must be done for either single or multiple maps!"
-          
-        
-        
-        
-        
-       # self.logger.AppendText('Dispersive behaviour: %s\n' % )
      
-     
-     
-     
-    #______________________________________________________________________________________________________    
+    #______________________________________________________________________________________________________
+    # Combo Boxes
     def EvtComboBox(self, event):
-        if event.GetId() == 93:   # 93 -> Single or Multiple maps combo box
-            self.input_map=event.GetString()
-            self.logger.AppendText('Map : %s' % event.GetString())
+      
+        # Combo Box - event 93 (take the name of single or multiple maps and transform it into a list)
+        if event.GetId() == 93:
+            self.input_maps = [event.GetString()]
+            self.logger.AppendText('Map: %s' % event.GetString())
         else:
-            self.logger.AppendText('EvtComboBox: NEED TO BE SPECIFIED' )
+            self.logger.AppendText('EvtComboBox: NEEDS TO BE SPECIFIED')
             
             
 
@@ -1791,31 +2047,31 @@ class LSMetrics(wx.Panel):
           self.dirout=selectdirectory()
           
           
-          if self.formcalculate=="Single":
+          if self.calc_multiple=="Single":
             
-            if self.prepareBIODIM:
+            if self.prepare_biodim:
               self.output_prefix2 = 'lndscp_0001_'            
             
             if self.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
               
-              create_habmat_single(self.input_map, self.output_prefix2, self.list_habitat_classes, prepareBIODIM=self.prepareBIODIM, 
-                                   calcStatistics=self.calcStatistics, dirout=self.dirout)
-            if self.Patch==True:   
+              create_habmat_single(self.input_map, self.output_prefix2, self.list_habitat_classes, prepare_biodim=self.prepare_biodim, 
+                                   calc_statistics=self.calc_statistics, dirout=self.dirout)
+            if self.patch_size==True:   
               
-              patchSingle(self.input_map, self.output_prefix2, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash)
+              patchSingle(self.input_map, self.output_prefix2, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash)
               
             if self.Frag==True:
               
-              areaFragSingle(self.input_map, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash)
+              areaFragSingle(self.input_map, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash)
             if self.Con==True:
-              areaconSingle(self.input_map, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepareBIODIM, self.calcStatistics, self.removeTrash)
+              areaconSingle(self.input_map, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepare_biodim, self.calc_statistics, self.remove_trash)
             if self.checEDGE==True:
               
-              create_EDGE_single(self.input_map, self.escala_ED, self.dirout, self.output_prefix2, self.calcStatistics, self.removeTrash,self.list_esc_pct)
+              create_EDGE_single(self.input_map, self.escala_ED, self.dirout, self.output_prefix2, self.calc_statistics, self.remove_trash,self.list_esc_pct)
              
             if self.Dist==True:
-              dist_edge_Single(self.input_map,self.output_prefix2, self.prepareBIODIM, self.dirout, self.removeTrash)
+              dist_edge_Single(self.input_map,self.output_prefix2, self.prepare_biodim, self.dirout, self.remove_trash)
               
             if self.checPCT==True:
               PCTs_single(self.input_map, self.list_esc_pct)
@@ -1824,82 +2080,54 @@ class LSMetrics(wx.Panel):
             
           else: # caso seja pra mais de um arquivos
                       
-            if self.prepareBIODIM:
-              self.ListMapsGroupCalc=grass.list_grouped ('rast', pattern=self.RegularExp) ['userbase']
+            if self.prepare_biodim:
+              self.input_maps=grass.list_grouped ('rast', pattern=self.pattern_name) ['userbase']
               self.output_prefix2 = 'lndscp_'              
             else:
-              self.ListMapsGroupCalc=grass.list_grouped ('rast', pattern=self.RegularExp) ['PERMANENT']   
+              self.input_maps=grass.list_grouped ('rast', pattern=self.pattern_name) ['PERMANENT']   
               
             if self.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
-              create_habmat(self.ListMapsGroupCalc, list_habitat_classes=self.list_habitat_classes, 
-                            prepareBIODIM=self.prepareBIODIM, calcStatistics=self.calcStatistics, prefix = self.output_prefix2)            
+              create_habmat(self.input_maps, list_habitat_classes=self.list_habitat_classes, 
+                            prepare_biodim=self.prepare_biodim, calc_statistics=self.calc_statistics, prefix = self.output_prefix2)            
             
              
             
             if self.checEDGE==True:
-              self.list_meco=create_EDGE(self.ListMapsGroupCalc, self.escala_ED, self.dirout, self.output_prefix2, self.calcStatistics, self.removeTrash,self.list_esc_pct,self.checkCalc_PCTedge)     
-              areaFrag(self.ListMapsGroupCalc, self.output_prefix2,self.escala_ED, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash,self.list_meco,self.checEDGE)
+              self.list_meco=create_EDGE(self.input_maps, self.escala_ED, self.dirout, self.output_prefix2, self.calc_statistics, self.remove_trash,self.list_esc_pct,self.checkCalc_PCTedge)     
+              areaFrag(self.input_maps, self.output_prefix2,self.escala_ED, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash,self.list_meco,self.checEDGE)
               
             
             if self.Frag==True:
               self.list_meco=[]
               self.checEDGE=False
               
-              areaFrag(self.ListMapsGroupCalc, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash,self.list_meco,self.checEDGE)
+              areaFrag(self.input_maps, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash,self.list_meco,self.checEDGE)
               
             if self.Con==True:
-              self.ListmapsPatch=Patch(self.ListMapsGroupCalc, self.output_prefix2, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash)
-              areacon(self.ListMapsGroupCalc,self.output_prefix2, self.escala_frag_con, self.dirout, self.prepareBIODIM, self.calcStatistics, self.removeTrash) 
+              self.ListmapsPatch=patch_size(self.input_maps, self.output_prefix2, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash)
+              areacon(self.input_maps,self.output_prefix2, self.escala_frag_con, self.dirout, self.prepare_biodim, self.calc_statistics, self.remove_trash) 
               
             
             if self.Dist==True:
-              dist_edge(self.ListMapsGroupCalc,self.output_prefix2, self.prepareBIODIM, self.dirout, self.removeTrash)
+              dist_edge(self.input_maps,self.output_prefix2, self.prepare_biodim, self.dirout, self.remove_trash)
             
             if self.checPCT==True:
-              PCTs(self.ListMapsGroupCalc, self.list_esc_pct)
+              PCTs(self.input_maps, self.list_esc_pct)
                
-        
         #______________________________________________________________________________________________________________ 
-        if event.GetId()==9:   #9==CHANGE BACKGROUND
-          if self.plotmaps==1:
-            if self.formcalculate=="Single":
-              x=1
-            else:
-              self.Refresh()
-              self.background_filename=self.listMapsPng
-              self.background_filename_start=self.background_filename[self.contBG]   
-              img =Image.open(self.background_filename[self.contBG])
-            
-              # redimensionamos sem perder a qualidade
-              img = img.resize((self.size,self.hsize),Image.ANTIALIAS)
-              img.save(self.background_filename[self.contBG])        
-            
-            
-              imageFile=self.background_filename[self.contBG]
-              im1 = Image.open(imageFile)
-              jpg1 = wx.Image(imageFile, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-              wx.StaticBitmap(self, -1, jpg1, (380,40), (jpg1.GetWidth(),  jpg1.GetHeight()), style=wx.SIMPLE_BORDER)
-                                
-              self.background_filename=self.background_filename_start
-              self.contBG=self.contBG+1
-              self.Refresh() 
-              if len(self.listMapsPng)==self.contBG:
-                self.contBG=0      
-                self.Refresh() 
-              #______________________________________________________________________________________________________________ 
         if event.GetId()==11:   
           if self.chebin==True:
-            if  self.formcalculate=="Single":
+            if  self.calc_multiple=="Single":
               createBinarios_single(self.input_map)
             else:
               
-              if self.prepareBIODIM:
-                self.ListMapsGroupCalc=grass.list_grouped ('rast', pattern=self.RegularExp) ['userbase']
+              if self.prepare_biodim:
+                self.input_maps=grass.list_grouped ('rast', pattern=self.pattern_name) ['userbase']
               else:
-                self.ListMapsGroupCalc=grass.list_grouped ('rast', pattern=self.RegularExp) ['PERMANENT']                
+                self.input_maps=grass.list_grouped ('rast', pattern=self.pattern_name) ['PERMANENT']                
               
-              createBinarios(self.ListMapsGroupCalc)
+              createBinarios(self.input_maps)
           
           
         
@@ -1913,23 +2141,33 @@ class LSMetrics(wx.Panel):
         
     
     #______________________________________________________________________________________________________________                
+    # Text Events
     def EvtText(self, event):
-        #self.logger.AppendText('EvtText: %s\n' % event.GetString())
-      #______________________________________________________________________________________________________________ 
-           
-        if event.GetId()==190:
-          self.RegularExp=event.GetString() 
+         
+        # Text Event - event 190 (define the pattern for searching for input maps)
+        if event.GetId() == 190:
+          self.pattern_name = event.GetString()
           
-        if event.GetId()==191:
-          self.escala_frag_con=event.GetString()
+                  
+        if event.GetId() == 191:
+          edge_depth_frag_aux = event.GetString()
+          try:
+            self.edge_depth_frag = [float(i) for i in edge_depth_frag_aux.split(',')]
+          except:
+            raise Exception('Edge depth values must be numerical.')
           
-        if event.GetId()==192:
+          
+        if event.GetId() == 192:
           self.escala_ED=event.GetString()    
           
-        if event.GetId()==193:
-          list_habitat=event.GetString()
-          self.list_habitat_classes=list_habitat.split(',')
-          #self.list_habitat_classes=[int(i) for i in list_habitat.split(',')] # we do not have to transform in integers - command run already in strings, for passing it to GRASS
+        # List of values that correspond to habitat
+        if event.GetId() == 193:
+          list_habitat = event.GetString()
+          try:
+            #self.list_habitat_classes=list_habitat.split(',')
+            self.list_habitat_classes = [int(i) for i in list_habitat.split(',')]
+          except:
+            raise Exception('Codes for binary class reclassification of maps must be numerical.')
         
         if event.GetId()==194:
           # funcao para pegar a lista de escalas de porcentagem
@@ -1956,11 +2194,11 @@ class LSMetrics(wx.Panel):
                 
         if event.GetId()==96:
           if event.Checked()==1:
-            self.Patch=True
-            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Patch \n')
+            self.patch_size=True
+            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Patch size \n')
           else:
-            self.Patch=False
-            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Patch \n')
+            self.patch_size=False
+            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Patch size\n')
                    
             
         if event.GetId()==97:
@@ -1974,8 +2212,8 @@ class LSMetrics(wx.Panel):
         
         if event.GetId()==98: #criando txtx de statitiscas
           if int(event.Checked())==1: 
-            self.calcStatistics=True           
-            self.logger.AppendText('EvtCheckBox:\nCalculate connectivity statistics: '+`self.calcStatistics`+' \n')
+            self.calc_statistics=True           
+            self.logger.AppendText('EvtCheckBox:\nCalculate connectivity statistics: '+`self.calc_statistics`+' \n')
             
             
             
@@ -2051,7 +2289,7 @@ if __name__ == "__main__":
     # MAC?    
     
     app = wx.PySimpleApp()
-    frame = wx.Frame(None, -1, "LSMetrics "+VERSION, size=size)
+    frame = wx.Frame(None, -1, "LSMetrics "+VERSION, size = size)
     LSMetrics(frame,-1)
     frame.Show(1)
     
