@@ -1859,7 +1859,7 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics = wx.StaticText(self, -1, "Create binary map:", wx.Point(20, 250)) # Or habitat map?
         
         # Check box - event 100 (creating binary class maps)
-        self.insure1 = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 248))
+        self.insure1 = wx.CheckBox(self, 100, "", wx.Point(135 + self.add_width, 248))
         wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)       
 
         # Static text
@@ -1898,7 +1898,7 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics3 = wx.StaticText(self, -1, "Patch size map:", wx.Point(20, 340))
         
         # Check box - event 101 (check calculate patch size)
-        self.insure4 = wx.CheckBox(self, 101, '', wx.Point(120 + self.add_width, 338))
+        self.insure4 = wx.CheckBox(self, 101, '', wx.Point(135 + self.add_width, 338))
         wx.EVT_CHECKBOX(self, 101, self.EvtCheckBox)
                 
         # Check Box - event 52 (export patch size maps)
@@ -1913,7 +1913,7 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics4 = wx.StaticText(self, -1, "Fragment size map:", wx.Point(20, 370))
                 
         # Check box - event 102 (check calculate fragment size)
-        self.insure6 = wx.CheckBox(self, 102, '', wx.Point(120 + self.add_width, 368))
+        self.insure6 = wx.CheckBox(self, 102, '', wx.Point(135 + self.add_width, 368))
         wx.EVT_CHECKBOX(self, 102, self.EvtCheckBox)         
         
         # Static text
@@ -1937,7 +1937,7 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics6 = wx.StaticText(self, -1, "Structural connectivity:", wx.Point(20, 400))
                         
         # Check box - event 103 (check calculate structural connectivity)
-        self.insure8 = wx.CheckBox(self, 103, '', wx.Point(120 + self.add_width, 398))
+        self.insure8 = wx.CheckBox(self, 103, '', wx.Point(135 + self.add_width, 398))
         wx.EVT_CHECKBOX(self, 103, self.EvtCheckBox)
         self.insure8.Disable()
         
@@ -1953,7 +1953,7 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics7 = wx.StaticText(self, -1, "Proportion of habitat:", wx.Point(20, 430))
                         
         # Check box - event 104 (check calculate proportion of habitat)
-        self.insure10 = wx.CheckBox(self, 104, '', wx.Point(120 + self.add_width, 428))
+        self.insure10 = wx.CheckBox(self, 104, '', wx.Point(135 + self.add_width, 428))
         wx.EVT_CHECKBOX(self, 104, self.EvtCheckBox)         
                 
         # Static text
