@@ -1798,7 +1798,7 @@ class LSMetrics(wx.Panel):
         wx.StaticBitmap(self, -1, jpg1, (20, 470), (jpg1.GetWidth(), jpg1.GetHeight()), style=wx.SUNKEN_BORDER)
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
-        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 470), wx.Size(160,150), wx.TE_MULTILINE | wx.TE_READONLY)        
+        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 470), wx.Size(350, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
         
         #---------------------------------------------#
         #-------------- RADIO BOXES ------------------#
@@ -1858,51 +1858,77 @@ class LSMetrics(wx.Panel):
         
         # Check box - event 100 (creating binary class maps)
         self.insure1 = wx.CheckBox(self, 100, "", wx.Point(120 + self.add_width, 248))
-        wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)         
+        wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)       
 
         # Static text
         self.SelectMetrics1 = wx.StaticText(self, -1, "Codes for habitat:", wx.Point(165 + self.add_width, 250))
         
         # Text Control - event 193
         # List of codes that represent habitat, for generating binary class maps
-        self.editname2 = wx.TextCtrl(self, 193, '', wx.Point(300 + self.add_width, 250), wx.Size(120,-1)) 
+        self.editname2 = wx.TextCtrl(self, 193, '', wx.Point(300 + self.add_width, 248), wx.Size(120,-1)) 
         wx.EVT_TEXT(self, 193, self.EvtText)
+        self.editname2.Disable()
         
         # Static text
         self.export_text = wx.StaticText(self, -1, "Export?", wx.Point(450 + self.add_width, 215))
         
         # Check Box - event 51 (export binary maps)
         self.insure2 = wx.CheckBox(self, 51, "", wx.Point(465 + self.add_width, 248))
-        wx.EVT_CHECKBOX(self, 51, self.EvtCheckBox)       
+        wx.EVT_CHECKBOX(self, 51, self.EvtCheckBox)
+        self.insure2.Disable()
+        
+        # Check Box - event 71 (use binary maps calculated to calculate other landscape metrics)
+        self.insure3 = wx.CheckBox(self, 71, 'Use binary maps to calculate other metrics?', wx.Point(20, 280))
+        wx.EVT_CHECKBOX(self, 71, self.EvtCheckBox)
+        self.insure3.Disable()
+        
+        #---------------------------------------------#
+        #-------- STRUCTURAL CONNECTIVITY ------------#
+        #---------------------------------------------#         
       
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Metrics of structural connectivity:", wx.Point(20, 275))
-        self.SelectMetrics = wx.StaticText(self, -1,"Connectivity map:", wx.Point(20, 305))
-        self.SelectMetrics = wx.StaticText(self, -1,"Gap crossing list (m):", wx.Point(140, 305))
+        self.SelectMetrics2 = wx.StaticText(self, -1, "Metrics of structural connectivity:", wx.Point(20, 310))
+        
+        # Static text
+        self.SelectMetrics3 = wx.StaticText(self, -1, "Patch size map:", wx.Point(20, 340))
+        
+        # Check box - event 101 (check calculate patch size)
+        self.insure4 = wx.CheckBox(self, 101, '', wx.Point(120 + self.add_width, 338))
+        wx.EVT_CHECKBOX(self, 101, self.EvtCheckBox) 
+        
+        # Static text
+        self.SelectMetrics4 = wx.StaticText(self, -1, "Fragment size map:", wx.Point(20, 370))
+                
+        # Check box - event 102 (check calculate fragment size)
+        self.insure4 = wx.CheckBox(self, 102, '', wx.Point(120 + self.add_width, 368))
+        wx.EVT_CHECKBOX(self, 102, self.EvtCheckBox)         
+        
+        self.SelectMetrics = wx.StaticText(self, -1,"Connectivity map:", wx.Point(20, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Gap crossing list (m):", wx.Point(140, 500))
         
         # Static text      
-        self.SelectMetrics = wx.StaticText(self, -1,"Core/Edge map:", wx.Point(20, 308))
-        self.SelectMetrics = wx.StaticText(self, -1,"Edge depth list (m):", wx.Point(140, 308))
+        self.SelectMetrics = wx.StaticText(self, -1,"Core/Edge map:", wx.Point(20, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Edge depth list (m):", wx.Point(140, 500))
       
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Percentage:", wx.Point(20, 348))
-        self.SelectMetrics = wx.StaticText(self, -1,"Habitat", wx.Point(90, 348))
-        self.SelectMetrics = wx.StaticText(self, -1,"Edge/Core", wx.Point(156, 348))
+        self.SelectMetrics = wx.StaticText(self, -1,"Percentage:", wx.Point(20, 550))
+        self.SelectMetrics = wx.StaticText(self, -1,"Habitat", wx.Point(90, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Edge/Core", wx.Point(156, 500))
       
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Extents:", wx.Point(236, 348)) # para as pct
+        self.SelectMetrics = wx.StaticText(self, -1,"Extents:", wx.Point(236, 500)) # para as pct
 
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Calculate Statistics:", wx.Point(20, 445))
-        self.SelectMetrics = wx.StaticText(self, -1,"Distance from edge map:", wx.Point(20, 375))
+        self.SelectMetrics = wx.StaticText(self, -1,"Calculate Statistics:", wx.Point(20, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Distance from edge map:", wx.Point(20, 500))
         
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Landscape diversity map:", wx.Point(20, 400))
-        self.SelectMetrics = wx.StaticText(self, -1,"Extents (m):", wx.Point(170, 400)) # para  diversidade de shannon
+        self.SelectMetrics = wx.StaticText(self, -1,"Landscape diversity map:", wx.Point(20, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Extents (m):", wx.Point(170, 500)) # para  diversidade de shannon
         
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Export: Hab/Edge/Matrix", wx.Point(20, 448))
-        self.SelectMetrics = wx.StaticText(self, -1,"| Corridor/Branch/SS", wx.Point(170, 448))
+        self.SelectMetrics = wx.StaticText(self, -1,"Export: Hab/Edge/Matrix", wx.Point(20, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"| Corridor/Branch/SS", wx.Point(170, 500))
         
         #---------------------------------------------#
         #-------------- COMBO BOXES ------------------#
@@ -1923,21 +1949,21 @@ class LSMetrics(wx.Panel):
         
                   
       
-        self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 320)) # area con connectivity
+        self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 500)) # area con connectivity
         wx.EVT_CHECKBOX(self, 97,   self.EvtCheckBox)  
       
-        self.insure = wx.CheckBox(self, 150, "", wx.Point(120, 308)) #EDGE/Core
+        self.insure = wx.CheckBox(self, 150, "", wx.Point(120, 500)) #EDGE/Core
         wx.EVT_CHECKBOX(self, 150,   self.EvtCheckBox)  
         #"""
         #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
           #"""        
-        self.insure = wx.CheckBox(self, 151, "", wx.Point(135, 348)) # pct habitat
+        self.insure = wx.CheckBox(self, 151, "", wx.Point(135, 500)) # pct habitat
         wx.EVT_CHECKBOX(self, 151,   self.EvtCheckBox)            
       
         #"""
         #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
         #"""
-        self.insure = wx.CheckBox(self, 99, "", wx.Point(150, 375)) # self.Distedge botaozainho da distancia em relacao a borda
+        self.insure = wx.CheckBox(self, 99, "", wx.Point(150, 500)) # self.Distedge botaozainho da distancia em relacao a borda
         wx.EVT_CHECKBOX(self, 99,   self.EvtCheckBox)  
       
       
@@ -1946,24 +1972,24 @@ class LSMetrics(wx.Panel):
         """
               essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de diveridade de shannon
               """
-        self.insure = wx.CheckBox(self, 101, "", wx.Point(150, 400)) # Criando mapa de diversidade de shannon
-        wx.EVT_CHECKBOX(self, 101,   self.EvtCheckBox)   
+        self.insure = wx.CheckBox(self, 101111, "", wx.Point(150, 500)) # Criando mapa de diversidade de shannon
+        wx.EVT_CHECKBOX(self, 1111,   self.EvtCheckBox)   
       
       
-        self.insure = wx.CheckBox(self, 152, "", wx.Point(215, 348)) # pct edge edge/core preciso implementar
+        self.insure = wx.CheckBox(self, 152, "", wx.Point(215, 500)) # pct edge edge/core preciso implementar
         wx.EVT_CHECKBOX(self, 152,   self.EvtCheckBox)   
       
       
         """
               essa funcao a baixo eh o botao para saber se vai ou nao calcular a statistica para os mapas
               """
-        self.insure = wx.CheckBox(self, 98, "", wx.Point(150, 445)) # self.calc_statistics botaozainho da statisica
+        self.insure = wx.CheckBox(self, 98, "", wx.Point(150, 500)) # self.calc_statistics botaozainho da statisica
         wx.EVT_CHECKBOX(self, 98,   self.EvtCheckBox)      
       
-        self.insure = wx.CheckBox(self, 153, "", wx.Point(150, 448)) # export hab/edge/matrix
+        self.insure = wx.CheckBox(self, 153, "", wx.Point(150, 500)) # export hab/edge/matrix
         wx.EVT_CHECKBOX(self, 153,   self.EvtCheckBox)       
       
-        self.insure = wx.CheckBox(self, 154, "", wx.Point(275, 448)) # export corridor branch ss
+        self.insure = wx.CheckBox(self, 154, "", wx.Point(275, 500)) # export corridor branch ss
         wx.EVT_CHECKBOX(self, 154,   self.EvtCheckBox)     
 
         #---------------------------------------------#
@@ -1975,13 +2001,13 @@ class LSMetrics(wx.Panel):
 
                
         # List of gap crossing capability
-        self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(300 + self.add_width, 305), wx.Size(120,-1))
+        self.editname5 = wx.TextCtrl(self, 191, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
         # List of edge depths
-        self.editname3 = wx.TextCtrl(self, 192, '', wx.Point(300 + self.add_width, 340), wx.Size(120,-1))
+        self.editname6 = wx.TextCtrl(self, 192, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
         # List of extents for percentage maps
-        self.editname4 = wx.TextCtrl(self, 194, '', wx.Point(300 + self.add_width, 371), wx.Size(120,-1))
+        self.editname7 = wx.TextCtrl(self, 194, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
         # List of radii on influence for calculating landscape diversity/heterogeneity
-        self.editname6 = wx.TextCtrl(self, 195, '', wx.Point(300 + self.add_width, 395), wx.Size(120,-1))
+        self.editname8 = wx.TextCtrl(self, 195, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
         
         #---------------------------------------------#
         #-------------- TEXT EVENTS ------------------#
@@ -2183,10 +2209,12 @@ class LSMetrics(wx.Panel):
         # List of codes that represent habitat, for generating binary class maps
         if event.GetId() == 193:
           list_habitat = event.GetString()
+          print list_habitat
           try: # Transform values in a list of integers
             self.list_habitat_classes = [int(i) for i in list_habitat.split(',')]
           except:
-            raise Exception('Codes for binary class reclassification of maps must be numerical.')
+            self.list_habitat_classes = [-1]
+            print 'Codes for binary class reclassification of maps must be numerical.'
         
         if event.GetId()==194:
           # funcao para pegar a lista de escalas de porcentagem
@@ -2247,12 +2275,57 @@ class LSMetrics(wx.Panel):
           if int(event.Checked()) == 1:
             self.binary = True
             self.logger.AppendText('Create binary map: On\n')
+            self.editname2.Enable() # Disable list of habitat values
+            self.insure2.Enable() # Enable possibility to export binary maps
+            self.insure3.Enable() # Enable possibility to use generated binary maps for other metrics
           else:
             self.binary = False
-            self.logger.AppendText('Create binary map: Off\n')            
+            self.logger.AppendText('Create binary map: Off\n')
+            self.editname2.Disable() # Disable list of habitat values
+            self.insure2.Disable() # Disable possibility to export binary maps
+            self.insure3.Disable() # Disable possibility to use generated binary maps for other metrics
+            
+        # Check Box - event 71 (use calculated binary class maps to calculate other metrics)
+        if event.GetId() == 71:
+          if int(event.Checked()) == 1:
+            self.use_calculated_bin = True
+            self.logger.AppendText('Use binary maps for calculating other landscape metrics: On\n')
+          else:
+            self.use_calculated_bin = False
+            self.logger.AppendText('Use binary maps for calculating other landscape metrics: Off\n')
+            
+        # Check Box - event 101 (check calculate patch size)
+        if event.GetId() == 101:
+          if int(event.Checked()) == 1:
+            self.calc_patch_size = True
+            self.logger.AppendText('Calculate patch size: On\n')
+            #self.editname2.Enable() # Disable list of habitat values
+            #self.insure2.Enable() # Enable possibility to export binary maps
+            #self.insure3.Enable() # Enable possibility to use generated binary maps for other metrics
+          else:
+            self.calc_patch_size = False
+            self.logger.AppendText('Calculate patch size: Off\n')
+            #self.editname2.Disable() # Disable list of habitat values
+            #self.insure2.Disable() # Disable possibility to export binary maps
+            #self.insure3.Disable() # Disable possibility to use generated binary maps for other metrics
+            
+        # Check Box - event 102 (check calculate fragment size)
+        if event.GetId() == 102:
+          if int(event.Checked()) == 1:
+            self.calc_frag_size = True
+            self.logger.AppendText('Calculate fragment size: On\n')
+            #self.editname2.Enable() # Disable list of habitat values
+            #self.insure2.Enable() # Enable possibility to export binary maps
+            #self.insure3.Enable() # Enable possibility to use generated binary maps for other metrics
+          else:
+            self.calc_frag_size = False
+            self.logger.AppendText('Calculate fragment size: Off\n')
+            #self.editname2.Disable() # Disable list of habitat values
+            #self.insure2.Disable() # Disable possibility to export binary maps
+            #self.insure3.Disable() # Disable possibility to use generated binary maps for other metrics         
         
         #
-        if event.GetId()==101: #check EDGE
+        if event.GetId()==1111: #check EDGE
           if int(event.Checked())==1:
             self.check_diversity=True
             self.logger.AppendText('EvtCheckBox:\nMetric Selected: Diversity shannon map \n')
