@@ -1797,10 +1797,10 @@ class LSMetrics(wx.Panel):
         imageFile = 'logo_lab.png'
         im1 = Image.open(imageFile)
         jpg1 = wx.Image(imageFile, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-        wx.StaticBitmap(self, -1, jpg1, (20, 550), (jpg1.GetWidth(), jpg1.GetHeight()), style=wx.SUNKEN_BORDER)
+        wx.StaticBitmap(self, -1, jpg1, (20, 560), (jpg1.GetWidth(), jpg1.GetHeight()), style=wx.SUNKEN_BORDER)
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
-        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 550), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
+        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 560), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
         
         #---------------------------------------------#
         #-------------- RADIO BOXES ------------------#
@@ -1872,10 +1872,10 @@ class LSMetrics(wx.Panel):
         self.editname2.Disable()
         
         # Static text
-        self.export_text1 = wx.StaticText(self, -1, "Export?", wx.Point(450 + self.add_width, 215))
+        self.export_text1 = wx.StaticText(self, -1, "Export?", wx.Point(460 + self.add_width, 215))
         
         # Check Box - event 51 (export binary maps)
-        self.insure2 = wx.CheckBox(self, 51, "", wx.Point(465 + self.add_width, 248))
+        self.insure2 = wx.CheckBox(self, 51, "", wx.Point(475 + self.add_width, 248))
         wx.EVT_CHECKBOX(self, 51, self.EvtCheckBox)
         self.insure2.Disable()
         
@@ -1902,7 +1902,7 @@ class LSMetrics(wx.Panel):
         wx.EVT_CHECKBOX(self, 101, self.EvtCheckBox)
                 
         # Check Box - event 52 (export patch size maps)
-        self.insure5 = wx.CheckBox(self, 52, "", wx.Point(465 + self.add_width, 338))
+        self.insure5 = wx.CheckBox(self, 52, "", wx.Point(475 + self.add_width, 338))
         wx.EVT_CHECKBOX(self, 52, self.EvtCheckBox)
         self.insure5.Disable()
         
@@ -1926,7 +1926,7 @@ class LSMetrics(wx.Panel):
         self.editname3.Disable()        
         
         # Check Box - event 53 (export fragment size maps)
-        self.insure7 = wx.CheckBox(self, 53, "", wx.Point(465 + self.add_width, 368))
+        self.insure7 = wx.CheckBox(self, 53, "", wx.Point(475 + self.add_width, 368))
         wx.EVT_CHECKBOX(self, 53, self.EvtCheckBox)
         self.insure7.Disable()
         
@@ -1942,7 +1942,7 @@ class LSMetrics(wx.Panel):
         self.insure8.Disable()
         
         # Check Box - event 54 (export structural connectivity maps)
-        self.insure9 = wx.CheckBox(self, 54, "", wx.Point(465 + self.add_width, 398))
+        self.insure9 = wx.CheckBox(self, 54, "", wx.Point(475 + self.add_width, 398))
         wx.EVT_CHECKBOX(self, 54, self.EvtCheckBox)
         self.insure9.Disable()        
         
@@ -1966,7 +1966,7 @@ class LSMetrics(wx.Panel):
         self.editname4.Disable()        
                 
         # Check Box - event 55 (export proportion of habitat)
-        self.insure11 = wx.CheckBox(self, 55, "", wx.Point(465 + self.add_width, 428))
+        self.insure11 = wx.CheckBox(self, 55, "", wx.Point(475 + self.add_width, 428))
         wx.EVT_CHECKBOX(self, 55, self.EvtCheckBox)
         self.insure11.Disable()
         
@@ -1997,7 +1997,7 @@ class LSMetrics(wx.Panel):
         self.editname5.Disable()        
                 
         # Check Box - event 56 (export maps of functionally connected area)
-        self.insure13 = wx.CheckBox(self, 56, "", wx.Point(465 + self.add_width, 488))
+        self.insure13 = wx.CheckBox(self, 56, "", wx.Point(475 + self.add_width, 488))
         wx.EVT_CHECKBOX(self, 56, self.EvtCheckBox)
         self.insure13.Disable()         
 
@@ -2140,10 +2140,10 @@ class LSMetrics(wx.Panel):
         #-------------- BUTTONS ----------------------#
         #---------------------------------------------#        
         
-        self.button = wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 660))
+        self.button = wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 710))
         wx.EVT_BUTTON(self, 10, self.OnClick)
         
-        self.button = wx.Button(self, 8, "EXIT", wx.Point(270, 660))
+        self.button = wx.Button(self, 8, "EXIT", wx.Point(270, 710))
         wx.EVT_BUTTON(self, 8, self.OnExit)        
 
     #______________________________________________________________________________________________________    
@@ -2655,9 +2655,9 @@ if __name__ == "__main__":
     ########### ver como conversar tamanho de pixel em windows e linux
     # Adjusting width of GUI depending on the Operational System
     if CURRENT_OS == "Windows":
-      size = (520, 750)
+      size = (530, 800)
     elif CURRENT_OS == "Linux":
-      size = (520 + 50, 730)
+      size = (530 + 50, 750)
     # MAC?    
     
     app = wx.PySimpleApp()
