@@ -2316,9 +2316,9 @@ if __name__ == "__main__":
     ########### ver como conversar tamanho de pixel em windows e linux
     # Adjusting width of GUI depending on the Operational System
     if CURRENT_OS == "Windows":
-      size = (500, 680)
+      size = (530, 680)
     elif CURRENT_OS == "Linux":
-      size = (600, 680)
+      size = (530 + 50, 680)
     # MAC?    
     
     app = wx.PySimpleApp()
