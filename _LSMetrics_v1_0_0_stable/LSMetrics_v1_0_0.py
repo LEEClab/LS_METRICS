@@ -1845,7 +1845,7 @@ class LSMetrics(wx.Panel):
         
         # Text Control - event 190
         # Regular expression for selecting multiple maps
-        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(260 + self.add_width, 160), wx.Size(150,-1))
+        self.editname1 = wx.TextCtrl(self, 190, '', wx.Point(230 + self.add_width, 160), wx.Size(200,-1))
         self.editname1.Disable()
         wx.EVT_TEXT(self, 190, self.EvtText)
         
