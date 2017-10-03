@@ -1771,9 +1771,9 @@ class LSMetrics(wx.Panel):
         
         # If preparing maps for running BioDIM, the maps must be inside a mapset named 'userbase'
         if self.prepare_biodim: 
-          self.map_list=grass.list_grouped ('rast') ['userbase']
+          self.map_list = grass.list_grouped ('rast') ['userbase']
         else:
-          self.map_list=grass.list_grouped ('rast') [self.current_mapset]
+          self.map_list = grass.list_grouped ('rast') [self.current_mapset]
           
         #################### colocar isso de novo no final de uma rodada e atualizar o combobox - talvez o mapa
         ### gerado aparececa la!! testar!        
@@ -1797,10 +1797,10 @@ class LSMetrics(wx.Panel):
         imageFile = 'logo_lab.png'
         im1 = Image.open(imageFile)
         jpg1 = wx.Image(imageFile, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-        wx.StaticBitmap(self, -1, jpg1, (20, 470), (jpg1.GetWidth(), jpg1.GetHeight()), style=wx.SUNKEN_BORDER)
+        wx.StaticBitmap(self, -1, jpg1, (20, 550), (jpg1.GetWidth(), jpg1.GetHeight()), style=wx.SUNKEN_BORDER)
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
-        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 470), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
+        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 550), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
         
         #---------------------------------------------#
         #-------------- RADIO BOXES ------------------#
@@ -1970,37 +1970,84 @@ class LSMetrics(wx.Panel):
         wx.EVT_CHECKBOX(self, 55, self.EvtCheckBox)
         self.insure11.Disable()
         
+        #---------------------------------------------#
+        #-------- FUNCTIONAL CONNECTIVITY ------------#
+        #---------------------------------------------#         
+             
+        # Static text
+        self.SelectMetrics9 = wx.StaticText(self, -1, "Metrics of functional connectivity:", wx.Point(20, 460))
+        
+        #------------
+        # Functionally connected area
+        
+        # Static text
+        self.SelectMetrics10 = wx.StaticText(self, -1, "Functionally connected area:", wx.Point(20, 490))
+                        
+        # Check box - event 105 (check calculate functionally connected area)
+        self.insure12 = wx.CheckBox(self, 105, '', wx.Point(160 + self.add_width, 488))
+        wx.EVT_CHECKBOX(self, 105, self.EvtCheckBox)         
+                
+        # Static text
+        self.SelectMetrics11 = wx.StaticText(self, -1, "Crossing distance (m):", wx.Point(185 + self.add_width, 490))
+        
+        # Text Control - event 194
+        # List of gap crossing distances for calculating functional connectivity
+        self.editname5 = wx.TextCtrl(self, 194, '', wx.Point(340 + self.add_width, 488), wx.Size(120,-1)) 
+        wx.EVT_TEXT(self, 194, self.EvtText)
+        self.editname5.Disable()        
+                
+        # Check Box - event 56 (export maps of functionally connected area)
+        self.insure13 = wx.CheckBox(self, 56, "", wx.Point(465 + self.add_width, 488))
+        wx.EVT_CHECKBOX(self, 56, self.EvtCheckBox)
+        self.insure13.Disable()         
+
+        #------------
+        # Functional connectivity
+        
+        # Check Box - event 106 (check calculate functional connectivity)
+        self.insure14 = wx.CheckBox(self, 106, 'Functional connectivity', wx.Point(20, 520))
+        wx.EVT_CHECKBOX(self, 106, self.EvtCheckBox)
+        self.insure14.Disable()
+        
+        #------------
+        # Complete functionally connected area        
+      
+        # Check Box - event 107 (check calculate complete functional connected area)
+        self.insure15 = wx.CheckBox(self, 107, 'Complete funct. connected area', wx.Point(250 + self.add_width, 520))
+        wx.EVT_CHECKBOX(self, 107, self.EvtCheckBox)
+        self.insure15.Disable()           
+        
+
+
+
         
         
-        
-        
-        
-        self.SelectMetrics = wx.StaticText(self, -1,"Connectivity map:", wx.Point(20, 500))
-        self.SelectMetrics = wx.StaticText(self, -1,"Gap crossing list (m):", wx.Point(140, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Connectivity map:", wx.Point(20, 600))
+        self.SelectMetrics = wx.StaticText(self, -1,"Gap crossing list (m):", wx.Point(140, 600))
         
         # Static text      
-        self.SelectMetrics = wx.StaticText(self, -1,"Core/Edge map:", wx.Point(20, 500))
-        self.SelectMetrics = wx.StaticText(self, -1,"Edge depth list (m):", wx.Point(140, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Core/Edge map:", wx.Point(20, 600))
+        self.SelectMetrics = wx.StaticText(self, -1,"Edge depth list (m):", wx.Point(140, 600))
       
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Percentage:", wx.Point(20, 550))
-        self.SelectMetrics = wx.StaticText(self, -1,"Habitat", wx.Point(90, 500))
-        self.SelectMetrics = wx.StaticText(self, -1,"Edge/Core", wx.Point(156, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Percentage:", wx.Point(20, 600))
+        self.SelectMetrics = wx.StaticText(self, -1,"Habitat", wx.Point(90, 600))
+        self.SelectMetrics = wx.StaticText(self, -1,"Edge/Core", wx.Point(156, 600))
       
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Extents:", wx.Point(236, 500)) # para as pct
+        self.SelectMetrics = wx.StaticText(self, -1,"Extents:", wx.Point(236, 600)) # para as pct
 
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Calculate Statistics:", wx.Point(20, 500))
-        self.SelectMetrics = wx.StaticText(self, -1,"Distance from edge map:", wx.Point(20, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Calculate Statistics:", wx.Point(20, 600))
+        self.SelectMetrics = wx.StaticText(self, -1,"Distance from edge map:", wx.Point(20, 600))
         
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Landscape diversity map:", wx.Point(20, 500))
-        self.SelectMetrics = wx.StaticText(self, -1,"Extents (m):", wx.Point(170, 500)) # para  diversidade de shannon
+        self.SelectMetrics = wx.StaticText(self, -1,"Landscape diversity map:", wx.Point(20, 600))
+        self.SelectMetrics = wx.StaticText(self, -1,"Extents (m):", wx.Point(170, 600)) # para  diversidade de shannon
         
         # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Export: Hab/Edge/Matrix", wx.Point(20, 500))
-        self.SelectMetrics = wx.StaticText(self, -1,"| Corridor/Branch/SS", wx.Point(170, 500))
+        self.SelectMetrics = wx.StaticText(self, -1,"Export: Hab/Edge/Matrix", wx.Point(20, 600))
+        self.SelectMetrics = wx.StaticText(self, -1,"| Corridor/Branch/SS", wx.Point(170, 600))
         
         #---------------------------------------------#
         #-------------- COMBO BOXES ------------------#
@@ -2021,21 +2068,21 @@ class LSMetrics(wx.Panel):
         
                   
       
-        self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 500)) # area con connectivity
+        self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 600)) # area con connectivity
         wx.EVT_CHECKBOX(self, 97,   self.EvtCheckBox)  
       
-        self.insure = wx.CheckBox(self, 150, "", wx.Point(120, 500)) #EDGE/Core
+        self.insure = wx.CheckBox(self, 150, "", wx.Point(120, 600)) #EDGE/Core
         wx.EVT_CHECKBOX(self, 150,   self.EvtCheckBox)  
         #"""
         #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
           #"""        
-        self.insure = wx.CheckBox(self, 151, "", wx.Point(135, 500)) # pct habitat
+        self.insure = wx.CheckBox(self, 151, "", wx.Point(135, 600)) # pct habitat
         wx.EVT_CHECKBOX(self, 151,   self.EvtCheckBox)            
       
         #"""
         #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
         #"""
-        self.insure = wx.CheckBox(self, 99, "", wx.Point(150, 500)) # self.Distedge botaozainho da distancia em relacao a borda
+        self.insure = wx.CheckBox(self, 99, "", wx.Point(150, 600)) # self.Distedge botaozainho da distancia em relacao a borda
         wx.EVT_CHECKBOX(self, 99,   self.EvtCheckBox)  
       
       
@@ -2044,24 +2091,24 @@ class LSMetrics(wx.Panel):
         """
               essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de diveridade de shannon
               """
-        self.insure = wx.CheckBox(self, 1111, "", wx.Point(150, 500)) # Criando mapa de diversidade de shannon
+        self.insure = wx.CheckBox(self, 1111, "", wx.Point(150, 600)) # Criando mapa de diversidade de shannon
         wx.EVT_CHECKBOX(self, 1111,   self.EvtCheckBox)   
       
       
-        self.insure = wx.CheckBox(self, 152, "", wx.Point(215, 500)) # pct edge edge/core preciso implementar
+        self.insure = wx.CheckBox(self, 152, "", wx.Point(215, 600)) # pct edge edge/core preciso implementar
         wx.EVT_CHECKBOX(self, 152,   self.EvtCheckBox)   
       
       
         """
               essa funcao a baixo eh o botao para saber se vai ou nao calcular a statistica para os mapas
               """
-        self.insure = wx.CheckBox(self, 98, "", wx.Point(150, 500)) # self.calc_statistics botaozainho da statisica
+        self.insure = wx.CheckBox(self, 98, "", wx.Point(150, 600)) # self.calc_statistics botaozainho da statisica
         wx.EVT_CHECKBOX(self, 98,   self.EvtCheckBox)      
       
-        self.insure = wx.CheckBox(self, 153, "", wx.Point(150, 500)) # export hab/edge/matrix
+        self.insure = wx.CheckBox(self, 153, "", wx.Point(150, 600)) # export hab/edge/matrix
         wx.EVT_CHECKBOX(self, 153,   self.EvtCheckBox)       
       
-        self.insure = wx.CheckBox(self, 154, "", wx.Point(275, 500)) # export corridor branch ss
+        self.insure = wx.CheckBox(self, 154, "", wx.Point(275, 600)) # export corridor branch ss
         wx.EVT_CHECKBOX(self, 154,   self.EvtCheckBox)     
 
         #---------------------------------------------#
@@ -2075,9 +2122,9 @@ class LSMetrics(wx.Panel):
         
 
         # List of extents for percentage maps
-        self.editname7 = wx.TextCtrl(self, 194, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
+        self.editname7 = wx.TextCtrl(self, 194, '', wx.Point(300 + self.add_width, 600), wx.Size(120,-1))
         # List of radii on influence for calculating landscape diversity/heterogeneity
-        self.editname8 = wx.TextCtrl(self, 195, '', wx.Point(300 + self.add_width, 500), wx.Size(120,-1))
+        self.editname8 = wx.TextCtrl(self, 195, '', wx.Point(300 + self.add_width, 600), wx.Size(120,-1))
         
         #---------------------------------------------#
         #-------------- TEXT EVENTS ------------------#
@@ -2093,10 +2140,10 @@ class LSMetrics(wx.Panel):
         #-------------- BUTTONS ----------------------#
         #---------------------------------------------#        
         
-        self.button = wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 630))
+        self.button = wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 660))
         wx.EVT_BUTTON(self, 10, self.OnClick)
         
-        self.button = wx.Button(self, 8, "EXIT", wx.Point(270, 630))
+        self.button = wx.Button(self, 8, "EXIT", wx.Point(270, 660))
         wx.EVT_BUTTON(self, 8, self.OnExit)        
 
     #______________________________________________________________________________________________________    
@@ -2302,13 +2349,25 @@ class LSMetrics(wx.Panel):
             self.list_window_size_habitat = [float(i) for i in list_window_size.split(',')]
           except:
             self.list_window_size_habitat = [-1]
-            print 'Window size must be a positive numerical values, given in meters.'        
+            print 'Window size must be a positive numerical values, given in meters.'
+            
+        # Text Control - event 194
+        # List of gap crossing distances for calculating functional connectivity        
+        if event.GetId() == 194:
+          list_gap_cross = event.GetString()
+          try: # Transform values in a list of float numbers
+            self.list_gap_crossing = [float(i) for i in list_gap_cross.split(',')]
+          except:
+            self.list_gap_crossing = [-1]
+            print 'Gap crossing distances must be a positive numerical values, given in meters.'        
         
-        if event.GetId()==194:
+        
+        
+        if event.GetId()==1971:
           # funcao para pegar a lista de escalas de porcentagem
           list_esc_percent=event.GetString()
           self.list_esc_pct=list_esc_percent.split(',')
-        if event.GetId()==195:
+        if event.GetId()==1951:
           # funcao para pegar a lista de escalas de porcentagem
           list_esc_raios_DV=event.GetString()
           self.analise_rayos=list_esc_raios_DV.split(',')        
@@ -2449,6 +2508,42 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('Calculate proportion of habitat: Off\n')
             self.editname4.Disable() # Disable list of window sizes
             self.insure11.Disable() # Disable possibility to export maps of proportion of habitat
+            
+            
+        # Check box - event 105 (check calculate functionally connected area)
+        if event.GetId() == 105:
+          if int(event.Checked()) == 1:
+            self.functional_connected_area = True
+            self.logger.AppendText('Calculate functionally connected area: On\n')
+            self.editname5.Enable() # Enable list of gap crossing distances
+            self.insure13.Enable() # Enable possibility to export maps of functionally connected area
+            self.insure14.Enable() # Enable possibility to calculate maps of functional connectivity
+            self.insure15.Enable() # Enable possibility to calculate maps of complete functionally connected area
+          else:
+            self.functional_connected_area = False
+            self.logger.AppendText('Calculate functionally connected area: Off\n')
+            self.editname5.Disable() # Disable list of gap crossing distances
+            self.insure13.Disable() # Disable possibility to export maps of functionally connected area
+            self.insure14.Disable() # Disable possibility to calculate maps of functional connectivity
+            self.insure15.Disable() # Disable possibility to calculate maps of complete functionally connected area
+            
+        # Check Box - event 106 (check calculate functional connectivity)        
+        if event.GetId() == 106:
+          if int(event.Checked()) == 1:
+            self.functional_connectivity_map = True
+            self.logger.AppendText('Calculate functional connectivity map: On\n')
+          else:
+            self.functional_connectivity_map = False
+            self.logger.AppendText('Calculate functional connectivity map: Off\n')
+            
+        # Check Box - event 107 (check calculate complete functional connected area)
+        if event.GetId() == 107:
+          if int(event.Checked()) == 1:
+            self.functional_area_complete = True
+            self.logger.AppendText('Calculate complete functional connected area: On\n')
+          else:
+            self.functional_area_complete = False
+            self.logger.AppendText('Calculate complete functional connected area: Off\n')                
         
         #
         if event.GetId()==1111: #check EDGE
@@ -2531,11 +2626,20 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('Export map of proportion of habitat: On\n')
           else:
             self.export_percentage_habitat = False
-            self.logger.AppendText('Export map of proportion of habitat: Off\n')        
+            self.logger.AppendText('Export map of proportion of habitat: Off\n')
+            
+        # Check Box - event 56 (export maps of functionally connected area)
+        if event.GetId() == 56:
+          if int(event.Checked()) == 1:
+            self.export_func_con_area = True
+            self.logger.AppendText('Export map of functionally connected area: On\n')
+          else:
+            self.export_func_con_area = False
+            self.logger.AppendText('Export map of functionally connected area: Off\n')        
             
     #______________________________________________________________________________________________________
     def OnExit(self, event):
-        d= wx.MessageDialog( self, " Thanks for using LSMetrics "+VERSION+"!\n"
+        d= wx.MessageDialog( self, "Thanks for using LSMetrics "+VERSION+"!\n"
                             "","Good bye", wx.OK)
                             # Create a message dialog box
         d.ShowModal() # Shows it
@@ -2551,9 +2655,9 @@ if __name__ == "__main__":
     ########### ver como conversar tamanho de pixel em windows e linux
     # Adjusting width of GUI depending on the Operational System
     if CURRENT_OS == "Windows":
-      size = (520, 700)
+      size = (520, 750)
     elif CURRENT_OS == "Linux":
-      size = (520 + 50, 680)
+      size = (520 + 50, 730)
     # MAC?    
     
     app = wx.PySimpleApp()
