@@ -1,0 +1,8 @@
+COMMAND: v.in.ogr --overwrite input="SP_3543907_USO.shp" output="SP_3543907_USO" min_area=0.0001 type="" snap=-1
+GISDBASE: E:\mega\_dissertacao_v02\product
+LOCATION: newLocation MAPSET: PERMANENT USER: Compaq 6910p DATE: Thu Sep 07 11:40:18 2017
+-----------------------------------------------------
+13077 input polygons
+Total area: 4.98894E+008 (22842 areas)
+Overlapping area: 22025 (2168 areas)
+Area without category: 9.20194E-005 (1517 areas)

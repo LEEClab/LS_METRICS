@@ -1217,7 +1217,7 @@ def functional_connectivity(input_maps, list_gap_crossing,
           grass.run_command('r.out.gdal', input = i+'_'+format_escale_name+'m_functional_connectivity', output = i+'_'+format_escale_name+'m_functional_connectivity.tif', overwrite = True)
       
       # If export_fid == True, the fragment ID map is exported in this folder
-      if export_pid == True and dirout != '':
+      if export_pid == True and dirout != ''  and list_gap_cross[x] != 0:
         os.chdir(dirout)
         grass.run_command('g.region', rast = i+"_"+format_escale_name+'m_func_connect_pid')
         grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+'m_func_connect_pid', output = i+"_"+format_escale_name+'m_func_connect_pid.tif', overwrite = True)
@@ -1273,20 +1273,15 @@ def functional_connectivity(input_maps, list_gap_crossing,
       
       
 #----------------------------------------------------------------------------------
-# Metrics for edge area (EDGE)
-
-def mapcalcED(expression):
-  """
-  
-  """
-  grass.mapcalc(expression, overwrite = True, quiet = True)        
+# Metrics for edge area     
 
    
-    
+#-------------------------------
+# Function classify_edge_core
 def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calc_statistics,remove_trash,escale_pct,checkCalc_PCTedge):
   os.chdir(dirs)
   """
-  Function for a series of maps
+  
   This function separates habitat area into edge and interior/core regions, given a scale/distance defined as edge, and:
   - generates and exports maps with each region
   - generatics statistics - Area per region (matrix/edge/core) (if calc_statistics == True)
@@ -1329,14 +1324,14 @@ def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calc_statistics,remove_trash
       out=i+'_EDGE'+`apoioname`+'m_temp1'
       grass.run_command('r.series', input=inputs, out=out, method='sum', overwrite = True)
       espressaoEd=i+'_EDGE'+`apoioname`+'m_temp2 = int('+i+'_EDGE'+`apoioname`+'m_temp1)' # criando uma mapa inteiro
-      mapcalcED(espressaoEd)
+      grass.mapcalc(espressaoEd, overwrite = True, quiet = True)
            
       
       espressaoclip=i+'_EDGE'+`apoioname`+'m_temp3= if('+i_in+' >= 0, '+i+'_EDGE'+`apoioname`+'m_temp2, null())'
-      mapcalcED(espressaoclip)  
+      grass.mapcalc(espressaoclip, overwrite = True, quiet = True)  
       
       espressaoEd=outputname_meco+'=if('+i+'_EDGE'+`apoioname`+'m_temp3==0,0)|if('+i+'_EDGE'+`apoioname`+'m_temp3==1,4)|if('+i+'_EDGE'+`apoioname`+'m_temp3==2,5)'
-      mapcalcED(espressaoEd)       
+      grass.mapcalc(espressaoEd, overwrite = True, quiet = True)
       
       espressaocore=outputname_core+'= if('+i+'_EDGE'+`apoioname`+'m_temp3==2,1,0)'
       grass.mapcalc(espressaocore, overwrite = True, quiet = True)     
@@ -1377,66 +1372,106 @@ def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calc_statistics,remove_trash
   return list_meco
 
 
-#
 
-
-#----------------------------------------------------------------------------------
-# Metrics for distance to edges
     
 
-
-def dist_edge(Listmapsdist_in, prefix,prepare_biodim, dirout,remove_trash):
+#-------------------------------
+# Function dist_edge
+def dist_edge(input_maps,
+              prepare_biodim = False, remove_trash = True,
+              prefix = '', add_counter_name = False, export = False, dirout = ''):
   """
-  Function for a series of maps
-  This function calculates the distance of each pixel to habitat edges, considering
-  negative values (inside patches) and positive values (into the matrix). Also:
-  - generates and exports maps of distance to edge (DIST)
-  """
-
-  if prepare_biodim:
-    lista_maps_dist=[]    
+  Function dist_edge
   
+  This function calculates the distance of each pixel to the nearest habitat edges, considering
+  negative values (inside patches) and positive values (into the matrix). It 
+  generates and exports maps of distance to edge (if export == True), and prepare files for BioDIM
+  (if premore_biodim)
+  
+  Input:
+  input_maps: list with strings; a python list with maps loaded in the GRASS GIS location. Must be binary class maps (e.g. maps of habitat-non habitat).
+  prepare_biodim: (True/False) logical; if True, maps and input text files for running BioDIM package are prepared.
+  remove_trash: (True/False) logical; if True, maps generated in the middle of the calculation are deleted; otherwise they are kept within GRASS.
+  prefix: string; a prefix to be appended in the beginning of the output map names.
+  add_counter_name: (True/False) logical; if True, a number is attached to the beginning of each outputmap name, in the order of the input, following 0001, 0002, 0003 ...
+  export: (True/False) logical; if True, the maps are exported from GRASS.
+  dirout: string; folder where the output maps will be saved when exported from GRASS. If '', the output maps are generated but are not exported from GRASS.
+  
+  Output:
+  Maps distance to the nearest edge, in map units (preferentially in meters). Positive vales are matrix,
+  negativa values are within habitat.
+  If prepare_biodim == True, a file with map names of distance to edges to run BioDIM is generated.
+  """
+  
+  # If we ask to export something but we do not provide an output folder, it shows a warning
+  if (export or prepare_biodim or calc_statistics) and dirout == '':
+    warnings.warn("You are trying to export files from GRASS but we did not set an output folder.")  
+  
+  # If prepare_biodim == True, a list of map names of distance to habitat edge is created
+  if prepare_biodim:
+    list_maps_dist = []    
+  
+  # Initialize counter, in case the user wants to add a number to the map name
   cont = 1
-  for i_in in Listmapsdist:
+  
+  # For each map in the list of input maps
+  for i_in in input_maps:
     
-    if prefix == '':
+    # Putting (or not) a prefix in the beginning of the output map name
+    if not add_counter_name:
       pre_numb = ''
-    else:
-      if cont <= 9:
-        pre_numb = "000"+`cont`+'_'
-      elif cont <= 99:
-        pre_numb = "00"+`cont`+'_'
-      elif cont <= 999:        
-        pre_numb = "0"+`cont`+'_'
-      else: 
-        pre_numb = `cont`+'_'
+    else: # adding numbers in case of multiple maps
+      pre_numb = '00000'+`cont`+'_'
+      pre_numb = pre_numb[-5:]
 
+    # Prefix of the output
     i = prefix+pre_numb+i_in
 
+    # Define region
     grass.run_command('g.region', rast=i_in)
-    expression1=i+'_invert = if('+i_in+' == 0, 1, null())'
+    
+    # Based on the input habitat map, identify what is not habitat and set the habitat to null()
+    expression1 = i+'_invert = if('+i_in+' == 0, 1, null())'
     grass.mapcalc(expression1, overwrite = True, quiet = True)
-    grass.run_command('r.grow.distance', input=i+'_invert', distance=i+'_invert_forest_neg_eucldist',overwrite = True)
-    expression2=i+'_invert_matrix = if('+i_in+' == 0, null(), 1)'
+    
+    # Calculate distance from pixels in the habitat cells to the nearest habitat edges
+    grass.run_command('r.grow.distance', input = i+'_invert', distance = i+'_invert_habitat_neg_eucldist', overwrite = True)
+    
+    # Based on the input habitat map, identify what is habitat and set the matrix to null()
+    expression2 = i+'_invert_matrix = if('+i_in+' == 0, null(), 1)'
     grass.mapcalc(expression2, overwrite = True, quiet = True)
+    
+    # Calculate distance from pixels in the non-habitat cells to the nearest habitat edges
     grass.run_command('r.grow.distance', input=i+'_invert_matrix', distance=i+'_invert_matrix_pos_eucldist',overwrite = True)
-    expression3=i+'_dist = '+i+'_invert_matrix_pos_eucldist-'+i+'_invert_forest_neg_eucldist'
+    
+    # Final distance to edge = positive distance in the matrix - negative distance within habitat
+    expression3 = i+'_edge_dist = '+i+'_invert_matrix_pos_eucldist - '+i+'_invert_habitat_neg_eucldist'
     grass.mapcalc(expression3, overwrite = True, quiet = True)
     
+    # If biodim_prepare == True,  the list of map names is updated
     if prepare_biodim:
-      lista_maps_dist.append(i+'_dist')
-    else:
-      grass.run_command('r.out.gdal', input=i+'_dist', out=i+'_DIST.tif', overwrite = True)
+      list_maps_dist.append(i+'_edge_dist')
       
+    # If export == True and dirout == '', the map is not exported; in other cases, the map is exported in this folder
+    if export == True and dirout != '':
+      os.chdir(dirout)
+      grass.run_command('r.out.gdal', input = i+'_edge_dist', out = i+'_EDGE_DIST.tif', overwrite = True)
+      
+    # If remove_trash == True, the intermediate maps created in the calculation of patch size are removed
     if remove_trash:
-      txts = [i+'_invert', i+'_invert_forest_neg_eucldist', i+'_invert_matrix', i+'_invert_matrix_pos_eucldist']
+      # Define list of maps
+      txts = [i+'_invert', i+'_invert_habitat_neg_eucldist', i+'_invert_matrix', i+'_invert_matrix_pos_eucldist']
+      # Remove maps from GRASS GIS location
       for txt in txts:
-        grass.run_command('g.remove', type="raster", name=txt, flags='f')
+        grass.run_command('g.remove', type = "raster", name = txt, flags = 'f')
     
+    # Update counter of the map number
     cont += 1
     
+  # If prepare_biodim == True, use the list of output map names to create a text file and export it
   if prepare_biodim:
-    create_TXTinputBIODIM(lista_maps_dist, dirout, "simulados_HABMAT_DIST")
+    create_TXTinputBIODIM(list_maps_dist, dirout, "simulados_HABMAT_DIST")
+    
     
 #----------------------------------------------------------------------------------
 
@@ -1689,7 +1724,10 @@ class LSMetrics(wx.Panel):
         # calc_statistics: If True, statistics files of the maps are saved while creating them
         self.calc_statistics = True
         # calc_multiple: True in case of running metrics for multiple maps, and False if running for only one map
-        self.calc_multiple = False        
+        self.calc_multiple = False
+        
+        ######## set false later
+        self.export_pid_general = True
         
         # Metrics to be calculated
         self.binary = False # Option: Transform input maps into binary class maps
@@ -1716,11 +1754,11 @@ class LSMetrics(wx.Panel):
         self.export_binary = False # whether or not to export generated binary maps
         # For patch size
         self.export_patch_size = False # whether or not to export generated patch size maps
-        self.export_patch_id = False # whether or not to export generated patch ID maps
+        self.export_patch_id = self.export_pid_general # False # whether or not to export generated patch ID maps
         # For fragment size
         self.list_edge_depth_frag = [] # list of values of edge depth to be considered for fragmentation process
         self.export_frag_size = False # whether or not to export generated fragment size maps
-        self.export_frag_id = False # whether or not to export generated fragment ID maps
+        self.export_frag_id = self.export_pid_general # False # whether or not to export generated fragment ID maps
         # For structural connectivity
         self.export_struct_connec = False # whether or not to export generated structural connectivity maps
         # For percentage of habitat 
@@ -1730,10 +1768,12 @@ class LSMetrics(wx.Panel):
         # Functional connectivity
         self.list_gap_crossing = [] # list of gap crossing distances to be considered for functional connectivity
         self.export_func_con_area = False # whether or not to export generated functional connectivity area maps
-        self.export_func_con_pid = False # whether or not to export generated functional connectivity patch ID maps
+        self.export_func_con_pid = self.export_pid_general # False # whether or not to export generated functional connectivity patch ID maps
         # For edges
-        
+        # classify, classify all, percentage edge/core, dist edge
         # For diversity
+        # generate statistics
+        # export pids
         
         # GUI options
         
@@ -1791,7 +1831,7 @@ class LSMetrics(wx.Panel):
         self.imageFile0 = 'lsmetrics_logo.png'
         im0 = Image.open(self.imageFile0)
         jpg0 = wx.Image(self.imageFile0, wx.BITMAP_TYPE_ANY).Scale(200, 82).ConvertToBitmap()
-        wx.StaticBitmap(self, -1, jpg0, (100, 15), (jpg0.GetWidth(), jpg0.GetHeight()), style=wx.SUNKEN_BORDER)                  
+        wx.StaticBitmap(self, -1, jpg0, (150, 15), (jpg0.GetWidth(), jpg0.GetHeight()), style=wx.SUNKEN_BORDER)                  
         
         # LEEC lab logo
         imageFile = 'logo_lab.png'
@@ -1832,6 +1872,7 @@ class LSMetrics(wx.Panel):
         # Maps shown when selecting a single map to calculate metrics
         try: # Try to select the first map of the list of maps loaded in the GRASS GIS location
           self.chosen_map = self.map_list[0]
+          self.input_maps = [self.map_list[0]]
         except: # If there are no maps loaded
           self.chosen_map = ''
         
@@ -2022,127 +2063,41 @@ class LSMetrics(wx.Panel):
 
         
         
-        self.SelectMetrics = wx.StaticText(self, -1,"Connectivity map:", wx.Point(20, 600))
-        self.SelectMetrics = wx.StaticText(self, -1,"Gap crossing list (m):", wx.Point(140, 600))
         
-        # Static text      
-        self.SelectMetrics = wx.StaticText(self, -1,"Core/Edge map:", wx.Point(20, 600))
-        self.SelectMetrics = wx.StaticText(self, -1,"Edge depth list (m):", wx.Point(140, 600))
+        ## Static text      
+        #self.SelectMetrics = wx.StaticText(self, -1,"Core/Edge map:", wx.Point(20, 600))
+        #self.SelectMetrics = wx.StaticText(self, -1,"Edge depth list (m):", wx.Point(140, 600))
       
-        # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Percentage:", wx.Point(20, 600))
-        self.SelectMetrics = wx.StaticText(self, -1,"Habitat", wx.Point(90, 600))
-        self.SelectMetrics = wx.StaticText(self, -1,"Edge/Core", wx.Point(156, 600))
+        ## Static text
+        #self.SelectMetrics = wx.StaticText(self, -1,"Percentage:", wx.Point(20, 600))
+        #self.SelectMetrics = wx.StaticText(self, -1,"Edge/Core", wx.Point(156, 600))
       
-        # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Extents:", wx.Point(236, 600)) # para as pct
+        ## Static text
+        #self.SelectMetrics = wx.StaticText(self, -1,"Extents:", wx.Point(236, 600)) # para as pct
 
-        # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Calculate Statistics:", wx.Point(20, 600))
-        self.SelectMetrics = wx.StaticText(self, -1,"Distance from edge map:", wx.Point(20, 600))
+        ## Static text
+        #self.SelectMetrics = wx.StaticText(self, -1,"Calculate Statistics:", wx.Point(20, 600))
+        #self.SelectMetrics = wx.StaticText(self, -1,"Distance from edge map:", wx.Point(20, 600))
         
-        # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Landscape diversity map:", wx.Point(20, 600))
-        self.SelectMetrics = wx.StaticText(self, -1,"Extents (m):", wx.Point(170, 600)) # para  diversidade de shannon
+        ## Static text
+        #self.SelectMetrics = wx.StaticText(self, -1,"Landscape diversity map:", wx.Point(20, 600))
+        #self.SelectMetrics = wx.StaticText(self, -1,"Extents (m):", wx.Point(170, 600)) # para  diversidade de shannon
         
-        # Static text
-        self.SelectMetrics = wx.StaticText(self, -1,"Export: Hab/Edge/Matrix", wx.Point(20, 600))
-        self.SelectMetrics = wx.StaticText(self, -1,"| Corridor/Branch/SS", wx.Point(170, 600))
-        
-        #---------------------------------------------#
-        #-------------- COMBO BOXES ------------------#
-        #---------------------------------------------#        
-      
-          
+        ## Static text
+        #self.SelectMetrics = wx.StaticText(self, -1,"Export: Hab/Edge/Matrix", wx.Point(20, 600))
+        #self.SelectMetrics = wx.StaticText(self, -1,"| Corridor/Branch/SS", wx.Point(170, 600))
         
         
-        #---------------------------------------------#
-        #-------------- CHECK BOXES ------------------#
-        #---------------------------------------------#          
-      
-        #self.insure = wx.CheckBox(self, 96, "AH Patch.", wx.Point(70,150))
-        #wx.EVT_CHECKBOX(self, 96,   self.EvtCheckBox)     
-      
-        #self.insure = wx.CheckBox(self, 95, "AH Frag.", wx.Point(143,150))
-        #wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)
-        
-                  
-      
-        self.insure = wx.CheckBox(self, 97, "", wx.Point(120, 600)) # area con connectivity
-        wx.EVT_CHECKBOX(self, 97,   self.EvtCheckBox)  
-      
-        self.insure = wx.CheckBox(self, 150, "", wx.Point(120, 600)) #EDGE/Core
-        wx.EVT_CHECKBOX(self, 150,   self.EvtCheckBox)  
-        #"""
-        #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
-          #"""        
-        self.insure = wx.CheckBox(self, 151, "", wx.Point(135, 600)) # pct habitat
-        wx.EVT_CHECKBOX(self, 151,   self.EvtCheckBox)            
-      
-        #"""
-        #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
-        #"""
-        self.insure = wx.CheckBox(self, 99, "", wx.Point(150, 600)) # self.Distedge botaozainho da distancia em relacao a borda
-        wx.EVT_CHECKBOX(self, 99,   self.EvtCheckBox)  
-      
-      
-        
-      
-        """
-              essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de diveridade de shannon
-              """
-        self.insure = wx.CheckBox(self, 1111, "", wx.Point(150, 600)) # Criando mapa de diversidade de shannon
-        wx.EVT_CHECKBOX(self, 1111,   self.EvtCheckBox)   
-      
-      
-        self.insure = wx.CheckBox(self, 152, "", wx.Point(215, 600)) # pct edge edge/core preciso implementar
-        wx.EVT_CHECKBOX(self, 152,   self.EvtCheckBox)   
-      
-      
-        """
-              essa funcao a baixo eh o botao para saber se vai ou nao calcular a statistica para os mapas
-              """
-        self.insure = wx.CheckBox(self, 98, "", wx.Point(150, 600)) # self.calc_statistics botaozainho da statisica
-        wx.EVT_CHECKBOX(self, 98,   self.EvtCheckBox)      
-      
-        self.insure = wx.CheckBox(self, 153, "", wx.Point(150, 600)) # export hab/edge/matrix
-        wx.EVT_CHECKBOX(self, 153,   self.EvtCheckBox)       
-      
-        self.insure = wx.CheckBox(self, 154, "", wx.Point(275, 600)) # export corridor branch ss
-        wx.EVT_CHECKBOX(self, 154,   self.EvtCheckBox)     
-
-        #---------------------------------------------#
-        #-------------- TEXT CONTROLS ----------------#
-        #---------------------------------------------# 
-        
-        # Include fast description
-        
-
-               
-        
-
-        # List of extents for percentage maps
-        self.editname7 = wx.TextCtrl(self, 194, '', wx.Point(300 + self.add_width, 600), wx.Size(120,-1))
-        # List of radii on influence for calculating landscape diversity/heterogeneity
-        self.editname8 = wx.TextCtrl(self, 195, '', wx.Point(300 + self.add_width, 600), wx.Size(120,-1))
-        
-        #---------------------------------------------#
-        #-------------- TEXT EVENTS ------------------#
-        #---------------------------------------------#       
-        
-        
-        
-        
-        wx.EVT_TEXT(self, 194, self.EvtText)
-        wx.EVT_TEXT(self, 195, self.EvtText)
         
         #---------------------------------------------#
         #-------------- BUTTONS ----------------------#
         #---------------------------------------------#        
         
+        # Button - event 10 - Start calculations
         self.button = wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 710))
         wx.EVT_BUTTON(self, 10, self.OnClick)
         
+        # Button - event 8 - Exit LSMetrics
         self.button = wx.Button(self, 8, "EXIT", wx.Point(270, 710))
         wx.EVT_BUTTON(self, 8, self.OnExit)        
 
@@ -2191,114 +2146,54 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('Map: %s\n' % event.GetString())
         else:
             self.logger.AppendText('EvtComboBox: NEEDS TO BE SPECIFIED')
-            
-            
-
-
         
-    #______________________________________________________________________________________________________   
+    #______________________________________________________________________________________________________
+    # Function for clicking on buttons
     def OnClick(self,event):
-        #self.logger.AppendText(" Click on object with Id %d\n" %event.GetId())
         
-        #______________________________________________________________________________________________________________ 
-        if event.GetId()==10:   #10==START
+        #--------------------------------------
+        # Start button - event 10
+        if event.GetId() == 10:
 
           # Before running and calculating the metrics, the user must define the output folder
           # where output maps and files will be saved
-          self.dirout=selectdirectory()
+          self.outputdir = selectdirectory()
           
-          
-          if self.calc_multiple=="Single":
+          # If self.calc_multiple == False, run calculations for a single map, already defined in the GUI
+          # If self.calc_multiple == True, define the input maps given the input pattern 
+          if self.calc_multiple == True:
             
             if self.prepare_biodim:
-              self.output_prefix2 = 'lndscp_0001_'            
-            
-            if self.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
-              ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
-              
-              create_habmat_single(self.input_map, self.output_prefix2, self.list_habitat_classes, prepare_biodim=self.prepare_biodim, 
-                                   calc_statistics=self.calc_statistics, dirout=self.dirout)
-            if self.patch_size==True:   
-              
-              patchSingle(self.input_map, self.output_prefix2, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash)
-              
-            if self.Frag==True:
-              
-              areaFragSingle(self.input_map, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash)
-            if self.Con==True:
-              areaconSingle(self.input_map, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepare_biodim, self.calc_statistics, self.remove_trash)
-            if self.checEDGE==True:
-              
-              create_EDGE_single(self.input_map, self.escala_ED, self.dirout, self.output_prefix2, self.calc_statistics, self.remove_trash,self.list_esc_pct)
-             
-            if self.Dist==True:
-              dist_edge_Single(self.input_map,self.output_prefix2, self.prepare_biodim, self.dirout, self.remove_trash)
-              
-            if self.checPCT==True:
-              PCTs_single(self.input_map, self.list_esc_pct)
-            if self.check_diversity==True:
-              shannon_diversity(self.input_map, self.dirout, self.analise_rayos)
-            
-          else: # caso seja pra mais de um arquivos
-                      
-            if self.prepare_biodim:
-              self.input_maps=grass.list_grouped ('rast', pattern=self.pattern_name) ['userbase']
-              self.output_prefix2 = 'lndscp_'              
+              self.input_maps = grass.list_grouped ('rast', pattern=self.pattern_name) ['userbase']
+              #self.output_prefix2 = 'lndscp_'              
             else:
-              self.input_maps=grass.list_grouped ('rast', pattern=self.pattern_name) ['PERMANENT']   
-              
-            if self.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
-              ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
-              create_habmat(self.input_maps, list_habitat_classes=self.list_habitat_classes, 
-                            prepare_biodim=self.prepare_biodim, calc_statistics=self.calc_statistics, prefix = self.output_prefix2)            
-            
-             
-            
-            if self.checEDGE==True:
-              self.list_meco=create_EDGE(self.input_maps, self.escala_ED, self.dirout, self.output_prefix2, self.calc_statistics, self.remove_trash,self.list_esc_pct,self.checkCalc_PCTedge)     
-              areaFrag(self.input_maps, self.output_prefix2,self.escala_ED, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash,self.list_meco,self.checEDGE)
-              
-            
-            if self.Frag==True:
-              self.list_meco=[]
-              self.checEDGE=False
-              
-              areaFrag(self.input_maps, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash,self.list_meco,self.checEDGE)
-              
-            if self.Con==True:
-              self.ListmapsPatch=patch_size(self.input_maps, self.output_prefix2, self.dirout, self.prepare_biodim,self.calc_statistics,self.remove_trash)
-              areacon(self.input_maps,self.output_prefix2, self.escala_frag_con, self.dirout, self.prepare_biodim, self.calc_statistics, self.remove_trash) 
-              
-            
-            if self.Dist==True:
-              dist_edge(self.input_maps,self.output_prefix2, self.prepare_biodim, self.dirout, self.remove_trash)
-            
-            if self.checPCT==True:
-              PCTs(self.input_maps, self.list_esc_pct)
-               
-        #______________________________________________________________________________________________________________ 
-        if event.GetId()==11:   
-          if self.chebin==True:
-            if  self.calc_multiple=="Single":
-              createBinarios_single(self.input_map)
-            else:
-              
-              if self.prepare_biodim:
-                self.input_maps=grass.list_grouped ('rast', pattern=self.pattern_name) ['userbase']
-              else:
-                self.input_maps=grass.list_grouped ('rast', pattern=self.pattern_name) ['PERMANENT']                
-              
-              createBinarios(self.input_maps)
+              self.input_maps = grass.list_grouped ('rast', pattern=self.pattern_name) ['PERMANENT']
           
+          if len(self.input_maps) == 0:
+            raise Exception('The input maps must be selected.')
+          else:
+                
+            # Run all metrics selected
+            lsmetrics_run(input_maps = self.input_maps,
+                          outputdir = self.outputdir, output_prefix = '', add_counter_name = False,
+                          zero_bin = True, zero_metrics = False, use_calculated_bin = self.use_calculated_bin,
+                          calcstats = self.calc_statistics, prepare_biodim = self.prepare_biodim, remove_trash = self.remove_trash,
+                          binary = self.binary, list_habitat_classes = self.list_habitat_classes, export_binary = self.export_binary,
+                          calc_patch_size = self.calc_patch_size, diagonal = self.diagonal, export_patch_size = self.export_patch_size, export_patch_id = self.export_patch_id,
+                          calc_frag_size = self.calc_frag_size, list_edge_depth_frag = self.list_edge_depth_frag, export_frag_size = self.export_frag_size, export_frag_id = self.export_frag_id,
+                          struct_connec = self.struct_connec, export_struct_connec = self.export_struct_connec,
+                          percentage_habitat = self.percentage_habitat, list_window_size_habitat = self.list_window_size_habitat, method_percentage = self.method_percentage, export_percentage_habitat = self.export_percentage_habitat,
+                          functional_connected_area = self.functional_connected_area, list_gap_crossing = self.list_gap_crossing, export_func_con_area = self.export_func_con_area, export_func_con_pid = self.export_func_con_pid,
+                          functional_area_complete = self.functional_area_complete, functional_connectivity_map = self.functional_connectivity_map,
+                          classify_edge = False,
+                          edge_dist = False)          
           
-        
-        
-        # 
-        d= wx.MessageDialog( self, " Calculations finished! \n"
-                            " ","Thanks", wx.OK)
-                            # Create a message dialog box
-        d.ShowModal() # Shows it
-        d.Destroy()
+            # After the calculations are finished, say goodbye
+            d = wx.MessageDialog(self, "Calculations finished!\n"
+                                 "", "Thanks!", wx.OK)
+            # Create a message dialog box
+            d.ShowModal() # Shows it
+            d.Destroy()
         
     
     #______________________________________________________________________________________________________________                
@@ -2308,18 +2203,6 @@ class LSMetrics(wx.Panel):
         # Text Event - event 190 (define the pattern for searching for input maps)
         if event.GetId() == 190:
           self.pattern_name = event.GetString()
-          
-                  
-        if event.GetId() == 198:
-          edge_depth_frag_aux = event.GetString()
-          try:
-            self.edge_depth_frag = [float(i) for i in edge_depth_frag_aux.split(',')]
-          except:
-            raise Exception('Edge depth values must be numerical.')
-          
-          
-        if event.GetId() == 199:
-          self.escala_ED=event.GetString()    
           
         # Text Control - event 191
         # List of codes that represent habitat, for generating binary class maps
@@ -2359,50 +2242,13 @@ class LSMetrics(wx.Panel):
             self.list_gap_crossing = [float(i) for i in list_gap_cross.split(',')]
           except:
             self.list_gap_crossing = [-1]
-            print 'Gap crossing distances must be a positive numerical values, given in meters.'        
-        
-        
-        
-        if event.GetId()==1971:
-          # funcao para pegar a lista de escalas de porcentagem
-          list_esc_percent=event.GetString()
-          self.list_esc_pct=list_esc_percent.split(',')
-        if event.GetId()==1951:
-          # funcao para pegar a lista de escalas de porcentagem
-          list_esc_raios_DV=event.GetString()
-          self.analise_rayos=list_esc_raios_DV.split(',')        
+            print 'Gap crossing distances must be a positive numerical values, given in meters.'              
           
         
 
     #______________________________________________________________________________________________________
     # Check Boxes
     def EvtCheckBox(self, event):
-        #self.logger.AppendText('EvtCheckBox: %d\n' % event.Checked())
-        if event.GetId()==95:
-            if event.Checked()==1:
-                self.Frag=True
-                self.logger.AppendText('EvtCheckBox:\nMetric Selected: Frag \n')
-            else:
-                self.Frag=False
-                self.logger.AppendText('EvtCheckBox: \nMetric Not Selected: Frag \n')
-                
-                
-        if event.GetId()==96:
-          if event.Checked()==1:
-            self.patch_size=True
-            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Patch size \n')
-          else:
-            self.patch_size=False
-            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Patch size\n')
-                   
-            
-        if event.GetId()==97:
-          if event.Checked()==1:
-            self.Con=True
-            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Connectivity \n')
-          else:
-            self.Con=False
-            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Connectivity \n')
                          
         
         if event.GetId()==98: #criando txtx de statitiscas
@@ -2411,11 +2257,6 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('EvtCheckBox:\nCalculate connectivity statistics: '+`self.calc_statistics`+' \n')
             
             
-            
-        if event.GetId()==99: #criando mapa de distancia 
-          if int(event.Checked())==1:
-            self.Dist=True
-            self.logger.AppendText('EvtCheckBox:\n Create Distance map: '+`self.Dist`+' \n')
          
         # Check Box - event 100 (calculate binary class map)   
         if event.GetId() == 100:
@@ -2544,42 +2385,7 @@ class LSMetrics(wx.Panel):
           else:
             self.functional_area_complete = False
             self.logger.AppendText('Calculate complete functional connected area: Off\n')                
-        
-        #
-        if event.GetId()==1111: #check EDGE
-          if int(event.Checked())==1:
-            self.check_diversity=True
-            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Diversity shannon map \n')
-          else:
-            self.check_diversity=False
-            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Diversity shannon map \n')         
-        
-        if event.GetId()==150: #check EDGE
-          if int(event.Checked())==1:
-            self.checEDGE=True
-            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Edge \n')
-          else:
-            self.checEDGE=False
-            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Edge \n')
-          
-         
-         
-        if event.GetId()==151: #check EDGE
-          if int(event.Checked())==1:
-            self.checPCT=True
-            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Percentage habitat \n')
-          else:
-            self.checPCT=False
-            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Percentage habitat \n')           
-        
-        # CRIAR UM BOTAO E UM EVENTO DESSES AQUI, PARA O MAPA DE DIST (mesmo que ele so seja usado para o biodim)
-        if event.GetId()==152: #check EDGE
-          if int(event.Checked())==1:
-            self.checkCalc_PCTedge=True
-            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Percentage from edge/core \n')
-          else:
-            self.checkCalc_PCTedge=False
-            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Percentage from edge/core \n')             
+                    
         
         # Check boxes for exporting maps
         
@@ -2638,10 +2444,13 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('Export map of functionally connected area: Off\n')        
             
     #______________________________________________________________________________________________________
+    # Button to exit LSMetrics
     def OnExit(self, event):
-        d= wx.MessageDialog( self, "Thanks for using LSMetrics "+VERSION+"!\n"
+      
+        # Message
+        d = wx.MessageDialog( self, "Thanks for using LSMetrics "+VERSION+"!\n"
                             "","Good bye", wx.OK)
-                            # Create a message dialog box
+        # Create a message dialog box
         d.ShowModal() # Shows it
         d.Destroy() # finally destroy it when finished.
         frame.Close(True)  # Close the frame. 
@@ -2652,7 +2461,7 @@ class LSMetrics(wx.Panel):
 if __name__ == "__main__":
     
     # Size of the window
-    ########### ver como conversar tamanho de pixel em windows e linux
+    
     # Adjusting width of GUI depending on the Operational System
     if CURRENT_OS == "Windows":
       size = (530, 800)
@@ -2660,6 +2469,7 @@ if __name__ == "__main__":
       size = (530 + 50, 750)
     # MAC?    
     
+    # Run GUI
     app = wx.PySimpleApp()
     frame = wx.Frame(None, -1, "LSMetrics "+VERSION, pos=(0,0), size = size)
     LSMetrics(frame,-1)

@@ -1,0 +1,29 @@
+Oi Miltinho, Mauricio e Felipe,
+
+dei uma boa adiantada, organizada e testada no LSMetrics. Até agora, implementei as funções:
+
+- Transformar mapa em binario (hab/mat)
+- Patch size
+- Fragment size
+- Structural connectivity
+- Percentage habitat
+- Functionally connected area
+- Functional connectivity
+
+Falta ainda adicionar as metricas de borda (classificar e calcular porporcao de edge/core), edge distance, 
+landscape diversity, e adicionar umas outras opcoes na interface (calcular estatisticas, exportar mapas de patch id).
+
+Dei umas testadas e parece estar ok até agora, mas seria bom se vocês pudessem testar também.
+Construi a estrutura de forma que podemos chamar as funcoes de dentro do python-grass, por linha de comando (e.g. patch_size(input_maps) ou lsmetrics_run(input_maps, patch_size = True)), ou chamando a interface grafica e rodando por ali. O codigo esta todo comentado também, e relativamente organizado.
+Da pra olhar para os detalhes de todas as funcoes chamando help(nome_da_funcao), uma vez dentro do python/grass.
+A versão mais atual é a v1_0_0, está no Github. Lá também tem um documento chamado 'test_LSMetrics.py' que da pra rodar e testar as funcoes por linha de comando. Ou da pra testar usando a GUI tb.
+O grassdb de teste tem duas paisagem, uma de Rio Claro com resolucao aprox. 30m, e outra de uma paisagem dos micos, com resolucao 10m.
+
+Estou em duvida em relacao a alguns detalhes, seria bom marcarmos uma conversa por Skype. Vocês podem?
+
+Vou tentar organizar um workflow das funcoes pra ficar bem claro pra vcs, e tb algo explicitando o que representa cada uma das opcoes.
+
+Abraçao
+B
+
+
