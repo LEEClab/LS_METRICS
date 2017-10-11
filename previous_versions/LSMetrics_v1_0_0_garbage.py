@@ -454,6 +454,120 @@ def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix,calcStatistics,rem
 #-------------------------------------------
 
 
+#----------------------------------------------------------------------------------
+#def para diversidade de shannon
+
+def createUiqueList(tab_fid00_arry_subset_list,dim):
+    tab_fid00_arry_subset_list_apoio=[]
+    for i in xrange(dim):
+        temp1=tab_fid00_arry_subset_list[i][:]
+        for j in temp1:
+            if j != -9999 :
+                tab_fid00_arry_subset_list_apoio.append(j)
+    return tab_fid00_arry_subset_list_apoio
+      
+      
+
+
+def Shannon(st):
+    st = st
+    stList = list(st)
+    alphabet = list(Set(st)) # list of symbols in the string
+    
+    # calculate the frequency of each symbol in the string
+    freqList = []
+    for symbol in alphabet:
+        ctr = 0
+        for sym in stList:
+            if sym == symbol:
+                ctr += 1
+        freqList.append(float(ctr) / len(stList))
+    
+    # Shannon entropy
+    ent = 0.0
+    for freq in freqList:
+        ent = ent + freq * math.log(freq, 2)
+    ent = -ent
+    
+    #print int(math.ceil(ent))
+    return ent
+
+
+    
+def removeBlancsapce(ls):
+    ls2=[]
+    for i in ls:
+        if i != "":
+            ls2.append(i)
+            
+    return ls2
+
+def setNodata(arry,nrow,ncol,nodata):
+    for i in xrange(nrow):
+        for j in xrange(ncol):
+            arry[i][j]=nodata
+    return arry
+
+#----------------------------------------------------------------------------------
+def shannon_diversity(landuse_map,dirout,Raio_Analise):
+  for raio in Raio_Analise:
+    raio_int=int(raio)
+    os.chdir(dirout) #
+    grass.run_command('g.region',rast=landuse_map)
+    grass.run_command('r.out.ascii',input=landuse_map,output='landuse_map.asc',null_value=-9999,flags='h')
+    landusemap_arry=np.loadtxt('landuse_map.asc')
+    NRows,Ncols=landusemap_arry.shape
+    region_info = grass.parse_command('g.region', rast=landuse_map, flags='m')  # pegando a resolucao    
+    cell_size = float(region_info['ewres'])    
+    north=float(region_info['n'])
+    south=float(region_info['s'])
+    east=float(region_info['e'])
+    west=float(region_info['w'])
+    rows=int(region_info['rows'])
+    cols=int(region_info['cols'])
+    
+    Nodata=-9999
+    
+    JanelaLinha=(raio_int/cell_size)
+    
+    new_array = np.zeros(shape=(NRows,Ncols))
+    new_array=setNodata(new_array,NRows,Ncols,Nodata)  
+    
+    JanelaLinha= int(JanelaLinha)
+    #
+    for i in xrange(JanelaLinha,NRows-JanelaLinha):
+      for j in xrange(JanelaLinha,Ncols-JanelaLinha):
+        landusemap_arry_subset=landusemap_arry[i-JanelaLinha:i+JanelaLinha,j-JanelaLinha:j+JanelaLinha]    
+        landusemap_arry_subset_list=landusemap_arry_subset.tolist()
+        landusemap_arry_subset_list=createUiqueList(landusemap_arry_subset_list,len(landusemap_arry_subset_list))
+        landusemap_arry_subset_list=map(str,landusemap_arry_subset_list)
+        new_array[i][j]=round(Shannon(landusemap_arry_subset_list),6)   
+
+    txt=open("landuse_map_shannon.asc",'w')
+    
+    L_parameters_Info_asc=['north: ',`north`+'\nsouth: ',`south`+'\neast: ',`east`+'\nwest: ',`west`+'\nrows: ',`rows`+'\ncols: '+`cols`+'\n']
+    
+    check_ultm=1 # variavel que vai saber se e o ultimo
+    for i in L_parameters_Info_asc:
+        if check_ultm==len(L_parameters_Info_asc):
+            txt.write(i)    
+        else:
+            txt.write(i+' ')  
+        check_ultm=check_ultm+1 
+        
+    for i in range(NRows):
+        for j in range(Ncols):
+            txt.write(str(new_array[i][j])+' ')
+        
+        txt.write('\n')
+    
+    txt.close()  
+    grass.run_command('r.in.ascii',input="landuse_map_shannon.asc",output=landuse_map+"_Shanno_Div_Esc_"+`raio_int`,overwrite=True,null_value=-9999)
+    grass.run_command('r.colors',map=landuse_map+"_Shanno_Div_Esc_"+`raio_int`,color='differences')
+    os.remove('landuse_map_shannon.asc')
+    os.remove('landuse_map.asc')
+    
+
 #-------------------------------------------
 
 
