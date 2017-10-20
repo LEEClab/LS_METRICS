@@ -2384,27 +2384,27 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics18 = wx.StaticText(self, -1, "Index:", wx.Point(20, 700))
         
         # Check box - event 130 (check method for diversity metrics - Shannon)
-        self.insure22 = wx.CheckBox(self, 130, 'Shannon', wx.Point(30 + self.add_width, 698))
+        self.insure22 = wx.CheckBox(self, 130, 'Shannon', wx.Point(60 + self.add_width, 698))
         wx.EVT_CHECKBOX(self, 130, self.EvtCheckBox)
         
         # Check box - event 131 (check method for diversity metrics - Simpson)
-        self.insure23 = wx.CheckBox(self, 131, 'Simpson', wx.Point(120 + self.add_width, 698))
+        self.insure23 = wx.CheckBox(self, 131, 'Simpson', wx.Point(150 + self.add_width, 698))
         wx.EVT_CHECKBOX(self, 131, self.EvtCheckBox)        
 
         # Check box - event 132 (check method for diversity metrics - Pielou)
-        self.insure24 = wx.CheckBox(self, 132, 'Pielou', wx.Point(210 + self.add_width, 698))
+        self.insure24 = wx.CheckBox(self, 132, 'Pielou', wx.Point(240 + self.add_width, 698))
         wx.EVT_CHECKBOX(self, 132, self.EvtCheckBox)
 
         # Check box - event 133 (check method for diversity metrics - Renyi)
-        self.insure25 = wx.CheckBox(self, 133, 'Renyi', wx.Point(300 + self.add_width, 698))
+        self.insure25 = wx.CheckBox(self, 133, 'Renyi', wx.Point(330 + self.add_width, 698))
         wx.EVT_CHECKBOX(self, 133, self.EvtCheckBox)
         
         # Static text
-        self.SelectMetrics19 = wx.StaticText(self, -1, "Alpha:", wx.Point(370 + self.add_width, 700))
+        self.SelectMetrics19 = wx.StaticText(self, -1, "Alpha:", wx.Point(400 + self.add_width, 700))
                 
         # Text Control - event 198
         # List of alpha values for landscape diversity index Renyi
-        self.editname9 = wx.TextCtrl(self, 198, '', wx.Point(420 + self.add_width, 698), wx.Size(80,-1)) 
+        self.editname9 = wx.TextCtrl(self, 198, '', wx.Point(445 + self.add_width, 698), wx.Size(60,-1)) 
         wx.EVT_TEXT(self, 198, self.EvtText)
         self.editname9.Disable()        
         
