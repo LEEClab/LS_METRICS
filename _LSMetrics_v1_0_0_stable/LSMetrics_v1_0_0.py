@@ -2384,19 +2384,19 @@ class LSMetrics(wx.Panel):
         self.SelectMetrics18 = wx.StaticText(self, -1, "Index:", wx.Point(20, 700))
         
         # Check box - event 130 (check method for diversity metrics - Shannon)
-        self.insure22 = wx.CheckBox(self, 130, 'Shannon', wx.Point(60 + self.add_width, 698))
+        self.insure22 = wx.CheckBox(self, 130, 'Shannon', wx.Point(60 + self.add_width, 699))
         wx.EVT_CHECKBOX(self, 130, self.EvtCheckBox)
         
         # Check box - event 131 (check method for diversity metrics - Simpson)
-        self.insure23 = wx.CheckBox(self, 131, 'Simpson', wx.Point(150 + self.add_width, 698))
+        self.insure23 = wx.CheckBox(self, 131, 'Simpson', wx.Point(150 + self.add_width, 699))
         wx.EVT_CHECKBOX(self, 131, self.EvtCheckBox)        
 
         # Check box - event 132 (check method for diversity metrics - Pielou)
-        self.insure24 = wx.CheckBox(self, 132, 'Pielou', wx.Point(240 + self.add_width, 698))
+        self.insure24 = wx.CheckBox(self, 132, 'Pielou', wx.Point(240 + self.add_width, 699))
         wx.EVT_CHECKBOX(self, 132, self.EvtCheckBox)
 
         # Check box - event 133 (check method for diversity metrics - Renyi)
-        self.insure25 = wx.CheckBox(self, 133, 'Renyi', wx.Point(330 + self.add_width, 698))
+        self.insure25 = wx.CheckBox(self, 133, 'Renyi', wx.Point(330 + self.add_width, 699))
         wx.EVT_CHECKBOX(self, 133, self.EvtCheckBox)
         
         # Static text
