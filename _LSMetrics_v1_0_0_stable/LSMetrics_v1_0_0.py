@@ -2072,7 +2072,7 @@ class LSMetrics(wx.Panel):
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
         #self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 560), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
-        self.logger = wx.TextCtrl(self, 5, '', wx.Point(400, 750), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
+        #self.logger = wx.TextCtrl(self, 5, '', wx.Point(400, 750), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
         
         #---------------------------------------------#
         #-------------- RADIO BOXES ------------------#
