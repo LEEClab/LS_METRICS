@@ -2033,7 +2033,8 @@ class LSMetrics(wx.Panel):
           self.add_width = 0
         elif CURRENT_OS == "Linux":
           self.add_width = 50
-        # MAC?
+        elif CURRENT_OS == "Darwin": # For Mac
+          self.add_width = 0
         else:
           self.add_width = 0
         
@@ -2953,7 +2954,8 @@ if __name__ == "__main__":
       size = (530, 880)
     elif CURRENT_OS == "Linux":
       size = (530 + 50, 770)
-    # MAC?    
+    elif CURRENT_OS == "Darwin": # For Mac
+      size = (530 + 50, 770)
     
     # Run GUI
     app = wx.PySimpleApp()
