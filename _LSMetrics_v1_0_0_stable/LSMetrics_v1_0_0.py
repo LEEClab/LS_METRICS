@@ -2951,7 +2951,7 @@ if __name__ == "__main__":
     
     # Adjusting width of GUI depending on the Operational System
     if CURRENT_OS == "Windows":
-      size = (530, 895)
+      size = (530, 850)
     elif CURRENT_OS == "Linux":
       size = (530 + 50, 770)
     elif CURRENT_OS == "Darwin": # For Mac
