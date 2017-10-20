@@ -1957,9 +1957,13 @@ class LSMetrics(wx.Panel):
         self.functional_connected_area = False # Option: Functionally connected area maps
         self.functional_area_complete = False # Option: Complete functionally connected area maps
         self.functional_connectivity_map = False # Option: Functional connectivity maps
-        
-        #self.Dist = True # Option: Distance from edge maps
-        #self.PCT = True # Option: Generate percentage (of habitat, of edges) maps
+        self.calc_edge_core = False # Option: Edge/core/matrix maps
+        self.calc_edge_core_area = False # Option: Edge/core clump area
+        self.percentage_edge_core = False # Option: Proportion of edge/core
+        self.calc_edge_dist = False # Option: Edge distance
+        self.calc_diversity = False # Option: Diversity metrics
+        #------
+        # Classify all elements??
         
         # Options for each metric
         
@@ -1988,9 +1992,22 @@ class LSMetrics(wx.Panel):
         self.list_gap_crossing = [] # list of gap crossing distances to be considered for functional connectivity
         self.export_func_con_area = False # whether or not to export generated functional connectivity area maps
         self.export_func_con_pid = self.export_pid_general # False # whether or not to export generated functional connectivity patch ID maps
-        # For edges
-        # classify, classify all, percentage edge/core, dist edge
-        # For diversity
+        # For edge/core
+        self.list_edge_depth_edgecore = [] # list of values of edge depth to be considered for edge/core classification
+        self.export_edge_core = False # whether or not to export generated edge/core/matrix maps
+        self.export_edge_core_pid = self.export_pid_general # False # whether or not to export generated edge/core clump ID maps
+        self.window_size_edge_core = [] # list of window sizes to be considered for proportion of edge/core
+        # Edge distance
+        self.classify_edge_as_dist_zero = False # whether or not to classify pixels of the edge as 0 distance from the edge
+        self.export_edge_dist = False # whether or not to export generated edge distance maps
+        # Diversity metrics
+        self.list_window_size_div = [] # list of window sizes to be considered for diversity index
+        self.method_div = [] # list of methods to be considered for diversity index ('simpson', 'shannon', 'pielou', 'renyi')
+        self.alpha = [] # list of alpha values for method renyi, to be considered for diversity index
+        self.export_diversity = False # whether or not to export generated landscape diversity maps       
+        
+        # classify all
+        
         # generate statistics
         # export pids
         
@@ -2004,12 +2021,6 @@ class LSMetrics(wx.Panel):
         self.pattern_name = ''  
         
         ############ REMOVE?
-        self.chebin = ''
-        self.checEDGE = ''
-        self.checkCalc_PCTedge = ''
-        self.checPCT = ''
-        self.check_diversity = ''
-        self.analise_rayos = ''
         self.list_meco = ''
         
         #------------------------------------------------------#
@@ -2050,16 +2061,17 @@ class LSMetrics(wx.Panel):
         self.imageFile0 = 'lsmetrics_logo.png'
         im0 = Image.open(self.imageFile0)
         jpg0 = wx.Image(self.imageFile0, wx.BITMAP_TYPE_ANY).Scale(200, 82).ConvertToBitmap()
-        wx.StaticBitmap(self, -1, jpg0, (150, 15), (jpg0.GetWidth(), jpg0.GetHeight()), style=wx.SUNKEN_BORDER)                  
+        wx.StaticBitmap(self, -1, jpg0, (100, 15), (jpg0.GetWidth(), jpg0.GetHeight()), style=wx.SUNKEN_BORDER)                  
         
         # LEEC lab logo
         imageFile = 'logo_lab.png'
         im1 = Image.open(imageFile)
-        jpg1 = wx.Image(imageFile, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-        wx.StaticBitmap(self, -1, jpg1, (20, 560), (jpg1.GetWidth(), jpg1.GetHeight()), style=wx.SUNKEN_BORDER)
+        jpg1 = wx.Image(imageFile, wx.BITMAP_TYPE_ANY).Scale(80, 70).ConvertToBitmap()
+        wx.StaticBitmap(self, -1, jpg1, (430 + self.add_width, 15), (jpg1.GetWidth(), jpg1.GetHeight()), style=wx.SUNKEN_BORDER)
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
-        self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 560), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
+        #self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 560), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
+        self.logger = wx.TextCtrl(self, 5, '', wx.Point(400, 750), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
         
         #---------------------------------------------#
         #-------------- RADIO BOXES ------------------#
@@ -2277,30 +2289,128 @@ class LSMetrics(wx.Panel):
         wx.EVT_CHECKBOX(self, 107, self.EvtCheckBox)
         self.insure15.Disable()           
         
-
-
-
+        #---------------------------------------------#
+        #------------ EDGE/CORE METRICS --------------#
+        #---------------------------------------------#         
+                     
+        # Static text
+        self.SelectMetrics12 = wx.StaticText(self, -1, "Metrics of edge:", wx.Point(20, 550))
+                
+        #------------
+        # Maps of edge/core/matrix
+                
+        # Static text
+        self.SelectMetrics13 = wx.StaticText(self, -1, "Classify edge/core/matrix:", wx.Point(20, 580))
+                                
+        # Check box - event 108 (check classify edge/core/matrix)
+        self.insure16 = wx.CheckBox(self, 108, '', wx.Point(150 + self.add_width, 578))
+        wx.EVT_CHECKBOX(self, 108, self.EvtCheckBox)         
         
+        # Static text
+        self.SelectMetrics14 = wx.StaticText(self, -1, "Edge depths (m):", wx.Point(185 + self.add_width, 580))
+                
+        # Text Control - event 195
+        # List of edge depths for calculating edge/core maps
+        self.editname6 = wx.TextCtrl(self, 195, '', wx.Point(340 + self.add_width, 578), wx.Size(120,-1)) 
+        wx.EVT_TEXT(self, 195, self.EvtText)
+        self.editname6.Disable()       
+                        
+        # Check Box - event 57 (export maps of edge/core/matrix)
+        self.insure17 = wx.CheckBox(self, 57, "", wx.Point(475 + self.add_width, 578))
+        wx.EVT_CHECKBOX(self, 57, self.EvtCheckBox)
+        self.insure17.Disable()
         
-        
-        ## Static text      
-        #self.SelectMetrics = wx.StaticText(self, -1,"Core/Edge map:", wx.Point(20, 600))
-        #self.SelectMetrics = wx.StaticText(self, -1,"Edge depth list (m):", wx.Point(140, 600))
-      
-        ## Static text
-        #self.SelectMetrics = wx.StaticText(self, -1,"Percentage:", wx.Point(20, 600))
-        #self.SelectMetrics = wx.StaticText(self, -1,"Edge/Core", wx.Point(156, 600))
-      
-        ## Static text
-        #self.SelectMetrics = wx.StaticText(self, -1,"Extents:", wx.Point(236, 600)) # para as pct
+        #------------
+        # Proportion of edge/core
+                
+        # Static text
+        self.SelectMetrics15 = wx.StaticText(self, -1, "Proportion of edge/core:", wx.Point(20, 610))
+                                
+        # Check box - event 109 (check calculate proportion of edge/core)
+        self.insure18 = wx.CheckBox(self, 109, '', wx.Point(140 + self.add_width, 608))
+        wx.EVT_CHECKBOX(self, 109, self.EvtCheckBox)
+        self.insure18.Disable()
+                        
+        # Static text
+        self.SelectMetrics16 = wx.StaticText(self, -1, "Window size (m):", wx.Point(165 + self.add_width, 610))
+                                
+        # Text Control - event 196
+        # List of moving window sizes for calculating proportion of edge/core
+        self.editname7 = wx.TextCtrl(self, 196, '', wx.Point(300 + self.add_width, 608), wx.Size(120,-1)) 
+        wx.EVT_TEXT(self, 196, self.EvtText)
+        self.editname7.Disable()                
 
+        #------------
+        # Area of edge/core clumps
+              
+        # Check Box - event 110 (check calculate area of edge/core clumps)
+        self.insure19 = wx.CheckBox(self, 110, 'Calculate area of edge/core clumps?', wx.Point(20, 640))
+        wx.EVT_CHECKBOX(self, 110, self.EvtCheckBox)
+        self.insure19.Disable()
+        
+        #---------------------------------------------#
+        #------------ DIVERSITY METRICS --------------#
+        #---------------------------------------------#         
+                             
+        # Static text
+        #self.SelectMetrics16 = wx.StaticText(self, -1, "Metrics of landscape diversity:", wx.Point(20, 670))
+                        
+        #------------
+        # Maps of edge/core/matrix
+                        
+        # Static text
+        self.SelectMetrics16 = wx.StaticText(self, -1, "Landscape diversity:", wx.Point(20, 670))
+                                        
+        # Check box - event 111 (check calculate diversity metrics)
+        self.insure20 = wx.CheckBox(self, 111, '', wx.Point(135 + self.add_width, 668))
+        wx.EVT_CHECKBOX(self, 111, self.EvtCheckBox)         
+                
+        # Static text
+        self.SelectMetrics17 = wx.StaticText(self, -1, "Window size (m):", wx.Point(165 + self.add_width, 670))
+        
+        # Text Control - event 197
+        # List of window sizes for calculating diversity maps
+        self.editname8 = wx.TextCtrl(self, 197, '', wx.Point(340 + self.add_width, 668), wx.Size(120,-1)) 
+        wx.EVT_TEXT(self, 197, self.EvtText)
+        self.editname8.Disable()       
+        
+        # Check Box - event 58 (export maps of diversity)
+        self.insure21 = wx.CheckBox(self, 58, "", wx.Point(475 + self.add_width, 668))
+        wx.EVT_CHECKBOX(self, 58, self.EvtCheckBox)
+        self.insure21.Disable()
+        
+        # Static text
+        self.SelectMetrics18 = wx.StaticText(self, -1, "Index:", wx.Point(20, 700))
+        
+        # Check box - event 130 (check method for diversity metrics - Shannon)
+        self.insure22 = wx.CheckBox(self, 130, 'Shannon', wx.Point(30 + self.add_width, 698))
+        wx.EVT_CHECKBOX(self, 130, self.EvtCheckBox)
+        
+        # Check box - event 131 (check method for diversity metrics - Simpson)
+        self.insure23 = wx.CheckBox(self, 131, 'Simpson', wx.Point(120 + self.add_width, 698))
+        wx.EVT_CHECKBOX(self, 131, self.EvtCheckBox)        
+
+        # Check box - event 132 (check method for diversity metrics - Pielou)
+        self.insure24 = wx.CheckBox(self, 132, 'Pielou', wx.Point(210 + self.add_width, 698))
+        wx.EVT_CHECKBOX(self, 132, self.EvtCheckBox)
+
+        # Check box - event 133 (check method for diversity metrics - Renyi)
+        self.insure25 = wx.CheckBox(self, 133, 'Renyi', wx.Point(300 + self.add_width, 698))
+        wx.EVT_CHECKBOX(self, 133, self.EvtCheckBox)
+        
+        # Static text
+        self.SelectMetrics19 = wx.StaticText(self, -1, "Alpha:", wx.Point(370 + self.add_width, 700))
+                
+        # Text Control - event 198
+        # List of alpha values for landscape diversity index Renyi
+        self.editname9 = wx.TextCtrl(self, 198, '', wx.Point(420 + self.add_width, 698), wx.Size(80,-1)) 
+        wx.EVT_TEXT(self, 198, self.EvtText)
+        self.editname9.Disable()        
+        
         ## Static text
         #self.SelectMetrics = wx.StaticText(self, -1,"Calculate Statistics:", wx.Point(20, 600))
-        #self.SelectMetrics = wx.StaticText(self, -1,"Distance from edge map:", wx.Point(20, 600))
         
-        ## Static text
-        #self.SelectMetrics = wx.StaticText(self, -1,"Landscape diversity map:", wx.Point(20, 600))
-        #self.SelectMetrics = wx.StaticText(self, -1,"Extents (m):", wx.Point(170, 600)) # para  diversidade de shannon
+        # export PID maps        
         
         ## Static text
         #self.SelectMetrics = wx.StaticText(self, -1,"Export: Hab/Edge/Matrix", wx.Point(20, 600))
@@ -2313,11 +2423,11 @@ class LSMetrics(wx.Panel):
         #---------------------------------------------#        
         
         # Button - event 10 - Start calculations
-        self.button = wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 710))
+        self.button = wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 730))
         wx.EVT_BUTTON(self, 10, self.OnClick)
         
         # Button - event 8 - Exit LSMetrics
-        self.button = wx.Button(self, 8, "EXIT", wx.Point(270, 710))
+        self.button = wx.Button(self, 8, "EXIT", wx.Point(270, 730))
         wx.EVT_BUTTON(self, 8, self.OnExit)        
 
     #______________________________________________________________________________________________________    
@@ -2404,11 +2514,11 @@ class LSMetrics(wx.Panel):
                           percentage_habitat = self.percentage_habitat, list_window_size_habitat = self.list_window_size_habitat, method_percentage = self.method_percentage, export_percentage_habitat = self.export_percentage_habitat,
                           functional_connected_area = self.functional_connected_area, list_gap_crossing = self.list_gap_crossing, export_func_con_area = self.export_func_con_area, export_func_con_pid = self.export_func_con_pid,
                           functional_area_complete = self.functional_area_complete, functional_connectivity_map = self.functional_connectivity_map,
-                          calc_edge_core = False, list_edge_depth_edgecore = [], export_edge_core = False,
-                          calc_edge_core_area = False, export_edge_core_pid = False,
-                          percentage_edge_core = False, window_size_edge_core = [],
-                          edge_dist = False, classify_edge_as_dist_zero = False, export_edge_dist = False,
-                          calc_diversity = False, list_window_size_div = [], method_div = [], alpha = [], export_diversity = False)          
+                          calc_edge_core = self.calc_edge_core, list_edge_depth_edgecore = self.list_edge_depth_edgecore, export_edge_core = self.export_edge_core,
+                          calc_edge_core_area = self.calc_edge_core_area, export_edge_core_pid = self.export_edge_core_pid,
+                          percentage_edge_core = self.percentage_edge_core, window_size_edge_core = self.window_size_edge_core,
+                          edge_dist = self.calc_edge_dist, classify_edge_as_dist_zero = self.classify_edge_as_dist_zero, export_edge_dist = self.export_edge_dist,
+                          calc_diversity = self.calc_diversity, list_window_size_div = self.list_window_size_div, method_div = self.method_div, alpha = self.alpha, export_diversity = self.export_diversity)
           
             # After the calculations are finished, say goodbye
             d = wx.MessageDialog(self, "Calculations finished!\n"
@@ -2465,8 +2575,46 @@ class LSMetrics(wx.Panel):
           except:
             self.list_gap_crossing = [-1]
             print 'Gap crossing distances must be a positive numerical values, given in meters.'              
-          
         
+        # Text Control - event 195
+        # List of edge depths for calculating edge/core maps
+        if event.GetId() == 195:
+          list_edge_meco = event.GetString()
+          try: # Transform values in a list of float numbers
+            self.list_edge_depth_edgecore = [float(i) for i in list_edge_meco.split(',')]
+          except:
+            self.list_edge_depth_edgecore = [-1]
+            print 'Edge depths must be a positive numerical values, given in meters.'
+            
+        # Text Control - event 196
+        # List of moving window sizes for calculating proportion of edge/core
+        if event.GetId() == 196:
+          list_window_size_edge = event.GetString()
+          try: # Transform values in a list of float numbers
+            self.window_size_edge_core = [float(i) for i in list_window_size_edge.split(',')]
+          except:
+            self.window_size_edge_core = [-1]
+            print 'Window sizes must be a positive numerical values, given in meters.'
+            
+        # Text Control - event 197
+        # List of window sizes for calculating diversity maps        
+        if event.GetId() == 197:
+          list_window_size_diver = event.GetString()
+          try: # Transform values in a list of float numbers
+            self.list_window_size_div = [float(i) for i in list_window_size_diver.split(',')]
+          except:
+            self.list_window_size_div = [-1]
+            print 'Window sizes must be a positive numerical values, given in meters.'
+            
+        # Text Control - event 198
+        # List of alpha values for landscape diversity index Renyi
+        if event.GetId() == 198:
+          list_alphas = event.GetString()
+          try: # Transform values in a list of float numbers
+            self.alpha = [float(i) for i in list_alphas.split(',')]
+          except:
+            self.alpha = [-1]
+            print 'Alpha must be a positive numerical values; please also avoid alpha = 1.'        
 
     #______________________________________________________________________________________________________
     # Check Boxes
@@ -2607,8 +2755,106 @@ class LSMetrics(wx.Panel):
           else:
             self.functional_area_complete = False
             self.logger.AppendText('Calculate complete functional connected area: Off\n')                
-                    
         
+        # Check Box - event 108 (check classify edge/core/matrix)
+        if event.GetId() == 108:
+          if int(event.Checked()) == 1:
+            self.calc_edge_core = True
+            self.logger.AppendText('Classify edge/core/matrix: On\n')
+            self.editname6.Enable() # Enable list of edge depths for maps of edge/core/matrix
+            self.insure17.Enable() # Enable possibility to export maps of edge/core/matrix
+            self.insure18.Enable() # Enable possibility to calculate proportion of edge/core
+            self.insure19.Enable() # Enable possibility to calculate area of edge/core clumps
+          else:
+            self.calc_edge_core = False
+            self.logger.AppendText('Classify edge/core/matrix: Off\n')
+            self.editname6.Disable() # Disable list of edge depths for maps of edge/core/matrix
+            self.insure17.Disable() # Disable possibility to export maps of edge/core/matrix
+            self.insure18.Disable() # Disable possibility to calculate proportion of edge/core
+            self.insure19.Disable() # Disable possibility to calculate area of edge/core clumps
+            
+        # Check Box - event 109 (check calculate proportion of edge core)
+        if event.GetId() == 109:
+          if int(event.Checked()) == 1:
+            self.calc_edge_core = True
+            self.logger.AppendText('Calculate proportion of edge/core: On\n')
+            self.editname7.Enable() # Enable list of window sizes
+          else:
+            self.calc_edge_core = False
+            self.logger.AppendText('Calculate proportion of edge/core: Off\n')
+            self.editname7.Disable() # Disable list of window sizes
+            
+        # Check Box - event 110 (check calculate area of edge/core clumps)
+        if event.GetId() == 110:
+          if int(event.Checked()) == 1:
+            self.calc_edge_core_area = True
+            self.logger.AppendText('Calculate area of edge/core clumps: On\n')
+          else:
+            self.calc_edge_core_area = False
+            self.logger.AppendText('Calculate area of edge/core clumps: Off\n')
+            
+        # Check Box - event 111 (check calculate diversity metrics)
+        if event.GetId() == 111:
+          if int(event.Checked()) == 1:
+            self.calc_diversity = True
+            self.logger.AppendText('Calculate landscape diversity: On\n')
+            self.editname8.Enable() # Enable list of window sizes
+            self.insure21.Enable() # Enable possibility to export maps of diversity
+            self.insure22.Enable() # Enable possibility to use method Shannon
+            self.insure23.Enable() # Enable possibility to use method Simpson
+            self.insure24.Enable() # Enable possibility to use method Pielou
+            self.insure25.Enable() # Enable possibility to use method Renyi            
+          else:
+            self.calc_diversity = False
+            self.logger.AppendText('Calculate landscape diversity: Off\n')        
+            self.editname8.Disable() # Disable list of window sizes
+            self.insure21.Disable() # Disable possibility to export maps of diversity
+            self.insure22.Disable() # Disable possibility to use method Shannon
+            self.insure23.Disable() # Disable possibility to use method Simpson
+            self.insure24.Disable() # Disable possibility to use method Pielou
+            self.insure25.Disable() # Disable possibility to use method Renyi
+        
+        # Check boxes for indexes of landscape diversity
+        
+        # Check Box - event 130 (check method for diversity metrics - Shannon)
+        if event.GetId() == 130:
+          if int(event.Checked()) == 1:
+            self.method_div.append('shannon')
+            self.logger.AppendText('Landscape diversity: Shannon selected\n')
+          else:
+            self.method_div.remove('shannon')
+            self.logger.AppendText('Landscape diversity: Shannon unselected\n')
+            
+        # Check Box - event 131 (check method for diversity metrics - Simpson)
+        if event.GetId() == 131:
+          if int(event.Checked()) == 1:
+            self.method_div.append('simpson')
+            self.logger.AppendText('Landscape diversity: Simpson selected\n')
+          else:
+            self.method_div.remove('simpson')
+            self.logger.AppendText('Landscape diversity: Simpson unselected\n')
+            
+        # Check Box - event 132 (check method for diversity metrics - Pielou)
+        if event.GetId() == 132:
+          if int(event.Checked()) == 1:
+            self.method_div.append('pielou')
+            self.logger.AppendText('Landscape diversity: Pielou selected\n')
+          else:
+            self.method_div.remove('pielou')
+            self.logger.AppendText('Landscape diversity: Pielou unselected\n')        
+          
+        # Check Box - event 133 (check method for diversity metrics - Renyi)
+        if event.GetId() == 133:
+          if int(event.Checked()) == 1:
+            self.method_div.append('renyi')
+            self.logger.AppendText('Landscape diversity: Renyi selected\n')
+            self.editname9.Enable() # Enable list of alpha values for Renyi index             
+          else:
+            self.method_div.remove('renyi')
+            self.logger.AppendText('Landscape diversity: Renyi unselected\n')
+            self.editname9.Disable() # Disable list of alpha values for Renyi index
+            
+            
         # Check boxes for exporting maps
         
         # Check Box - event 51 (export binary maps)
@@ -2663,7 +2909,25 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('Export map of functionally connected area: On\n')
           else:
             self.export_func_con_area = False
-            self.logger.AppendText('Export map of functionally connected area: Off\n')        
+            self.logger.AppendText('Export map of functionally connected area: Off\n')
+            
+        # Check Box - event 57 (export maps of edge/core/matrix)
+        if event.GetId() == 57:
+          if int(event.Checked()) == 1:
+            self.export_edge_core = True
+            self.logger.AppendText('Export map of edge/core/matrix: On\n')
+          else:
+            self.export_edge_core = False
+            self.logger.AppendText('Export map of edge/core/matrix: Off\n')
+            
+        # Check Box - event 58 (export maps of diversity)
+        if event.GetId() == 58:
+          if int(event.Checked()) == 1:
+            self.export_diversity = True
+            self.logger.AppendText('Export map of landscape diversity: On\n')
+          else:
+            self.export_diversity = False
+            self.logger.AppendText('Export map of landscape diversity: Off\n')        
             
     #______________________________________________________________________________________________________
     # Button to exit LSMetrics
@@ -2686,9 +2950,9 @@ if __name__ == "__main__":
     
     # Adjusting width of GUI depending on the Operational System
     if CURRENT_OS == "Windows":
-      size = (530, 800)
+      size = (530, 880)
     elif CURRENT_OS == "Linux":
-      size = (530 + 50, 750)
+      size = (530 + 50, 770)
     # MAC?    
     
     # Run GUI
