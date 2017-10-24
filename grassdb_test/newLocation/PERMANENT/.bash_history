@@ -271,3 +271,23 @@ cd Github/LS_METRICS/
 cd _LSMetrics_v1_0_0_stable/
 python LSMetrics_v1_0_0.py
 exit
+cd Github/LS_METRICS/
+git status
+cd _LSMetrics_v1_0_0/
+ls
+python LSMetrics_v1_0_0.py 
+g.list rast
+g.list rast
+python
+exit
+g.list rast
+g.list rast
+g.remove rast patt="*HABMAT* -f
+
+g.remove rast patt=*HABMAT* -f
+g.remove rast patt=*HABMAT* -f
+g.list rast
+g.remove rast patt=*test* -f
+g.list rast
+clear
+exit
