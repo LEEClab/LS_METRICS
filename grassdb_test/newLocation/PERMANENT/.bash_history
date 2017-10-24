@@ -267,3 +267,7 @@ g.remove rast patt=*HABMAT* -f
 g.list rast
 clear
 exit
+cd Github/LS_METRICS/
+cd _LSMetrics_v1_0_0_stable/
+python LSMetrics_v1_0_0.py
+exit

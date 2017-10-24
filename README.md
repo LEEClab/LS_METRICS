@@ -23,7 +23,7 @@ cd LS_METRICS/_LSMetrics_v1_0_stable
 python LSMetrics_v1_0.py
 ```
 
-<img src="images/LS_Con_GUI.png"/>
+<img src="images/LSMetrics_GUI.png"/>
 
 LSMetrics is currently based on binary (habitat/non-habitat) maps. If your maps are already classified in this fashion, 
 you can use it straightforwardly as input to calculate metrics and statistics. If not, first you should select `Create habitat map` 
