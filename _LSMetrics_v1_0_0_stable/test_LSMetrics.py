@@ -173,7 +173,7 @@ list_scales = [50]
 
 # With null
 fragment_area(input_maps = [bin_map_list[0]], list_edge_depths = list_scales, prefix = 'null_',
-              diagonal = False, export = True, export_fid=True)
+              diagonal = False, diagonal_neighbors = True, export = True, export_fid=True)
 
 help(fragment_area)
 
@@ -181,7 +181,7 @@ help(fragment_area)
 list_scales = [50, 100, 200]
 
 fragment_area(input_maps = [bin_map_list[0]], list_edge_depths = list_scales, prefix = 'null_',
-              diagonal = True)
+              diagonal = True, diagonal_neighbors = True)
 
 # 3) For more than one map and three scale
 # Test export, calculate statistics, and create output for biodim
@@ -198,7 +198,7 @@ lsmetrics_run(input_maps = [bin_map_list[0]],
               calcstats = True, prepare_biodim = True, remove_trash = True, 
               binary = False, export_binary = True,
               calc_patch_size = True, diagonal = True, export_patch_size = True, export_patch_id = True,
-              calc_frag_size = True, list_edge_depth_frag = list_scales, export_frag_size = True, export_frag_id = True)
+              calc_frag_size = True, list_edge_depth_frag = list_scales, diagonal_neighbors = True, export_frag_size = True, export_frag_id = True)
 
 # 5) Test using lsmetrics_run function calculating binary maps AND patch size maps AND fragment size maps
 lsmetrics_run(input_maps = [list_of_maps[0]],
@@ -207,7 +207,7 @@ lsmetrics_run(input_maps = [list_of_maps[0]],
               calcstats = True, prepare_biodim = True, remove_trash = True,
               binary = True, list_habitat_classes = habitat_is, export_binary = False,
               calc_patch_size = True, diagonal = False, export_patch_size = True, export_patch_id = True,
-              calc_frag_size = True, list_edge_depth_frag = list_scales, export_frag_size = True, export_frag_id = True)
+              calc_frag_size = True, list_edge_depth_frag = list_scales, diagonal_neighbors = True, export_frag_size = True, export_frag_id = True)
 
 # 6) test with structural connectivity
 
@@ -484,7 +484,7 @@ bin_map_list = create_binary(list_maps = list_of_maps, list_habitat_classes = ha
                              export = True, dirout = output_dir)
 
 edge_core(input_maps = bin_map_list, list_edge_depths = [50, 100, 200],
-          diagonal = True,
+          diagonal = True, diagonal_neighbors = True,
           calc_edge_core_area = True,
           calc_percentage = True, window_size = [200, 500],
           calc_statistics = True, remove_trash = True,
@@ -498,7 +498,7 @@ list_edges = [50, 100, 200]
 bin_map_list = create_binary(list_maps = list_of_maps, list_habitat_classes = habitat_is, zero = True, prefix = 'zero_')
 
 edge_core(input_maps = bin_map_list, list_edge_depths = list_edges,
-          diagonal = True,
+          diagonal = True, diagonal_neighbors = True,
           calc_edge_core_area = True,
           calc_percentage = True, window_size = [200, 500],
           calc_statistics = True, remove_trash = True,
@@ -610,6 +610,17 @@ grass.run_command('g.remove', type = 'raster', pattern = '*diversity*', flags = 
 
 
 
+
+
+
+
+
+
+
+
+
+
+#------------------- do not run here
 # test fragment
 python
 

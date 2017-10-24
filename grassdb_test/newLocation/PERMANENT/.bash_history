@@ -233,3 +233,37 @@ g.remove rast patt=*HABMAT* -f
 g.remove rast patt=*HABMAT* -f
 g.list rast
 exit
+r.import input=/home/leecb/Github/LS_METRICS/test_output/test_ero_d_dila_d_clump_c_0001_SP_RioClaro_use_raster_HABMAT_pid.tif output=test_ero_d_dila_d_clump_c_0001_SP_RioClaro_use_raster_HABMAT_pid
+r.colors map=test_ero_d_dila_d_clump_c_0001_SP_RioClaro_use_raster_HABMAT_pid@PERMANENT color=random
+r.import input=/home/leecb/Github/LS_METRICS/test_output/test_ero_d_dila_d_clump_c_0001_SP_RioClaro_use_raster_HABMAT_patch_AreaHA.tif output=test_ero_d_dila_d_clump_c_0001_SP_RioClaro_use_raster_HABMAT_patch_AreaHA
+r.import input=/home/leecb/Github/LS_METRICS/test_output/test_ero_c_dila_c_clump_c_0001_SP_RioClaro_use_raster_HABMAT_0050m_fid.tif output=test_ero_c_dila_c_clump_c_0001_SP_RioClaro_use_raster_HABMAT_0050m_fid
+r.import input=/home/leecb/Github/LS_METRICS/test_output/test_ero_d_dila_d_clump_c_0001_SP_RioClaro_use_raster_HABMAT_0050m_fid.tif output=test_ero_d_dila_d_clump_c_0001_SP_RioClaro_use_raster_HABMAT_0050m_fid
+cd Github/LS_METRICS/_LSMetrics_v1_0_0_stable/
+python LSMetrics_v1_0_0.py
+python LSMetrics_v1_0_0.py
+python LSMetrics_v1_0_0.py
+python LSMetrics_v1_0_0.py
+cd ..
+git status
+git status
+git status
+clear
+git status
+cd _LSMetrics_v1_0_0_stable/
+python LSMetrics_v1_0_0.py
+g.list rast
+g.remove rast patt=*HABMAT* -F
+g.remove rast patt=*HABMAT* -f
+g.remove rast patt=*HABMAT* -f
+g.remove rast patt=*patch* -f
+g.remove rast patt=*pid* -f
+g.list rast
+python LSMetrics_v1_0_0.py
+python LSMetrics_v1_0_0.py
+python LSMetrics_v1_0_0.py
+g.list rast
+g.remove rast patt=*HABMAT* -f
+g.remove rast patt=*HABMAT* -f
+g.list rast
+clear
+exit

@@ -701,7 +701,7 @@ def patch_size(input_maps,
 #-------------------------------
 # Function fragment_area
 def fragment_area(input_maps, list_edge_depths,
-                  zero = False, diagonal = False,
+                  zero = False, diagonal = True, diagonal_neighbors = True,
                   struct_connec = False, patch_size_map_names = [],
                   prepare_biodim = False, calc_statistics = False, remove_trash = True,
                   prefix = '', add_counter_name = False, export = False, export_fid = False, dirout = ''):
@@ -718,7 +718,8 @@ def fragment_area(input_maps, list_edge_depths,
   input_maps: list with strings; a python list with maps loaded in the GRASS GIS location. Must be binary class maps (e.g. maps of habitat-non habitat).
   list_edge_depths: list with numbers; each value correpond to an edge depth; the function excludes corridors with width = 2*(edge depth) to calculate fragment size.
   zero: (True/False) logical; if True, non-habitat values are set to zero; otherwise, they are set as null values.
-  diagonal: (True/False) logical; if True, cells are clumped also in the diagonal for estimating patch size. The default is True.
+  diagonal: (True/False) logical; if True, cells are clumped also in the diagonal for estimating patch size, in r.clump. The default is True.
+  diagonal_neighbors: (True/False) logical; if True, diagonal cells are considering when compressing and dilatating patches with r.neighbors. The default is True.
   struct_connec: (True/False) logical; if True, a structural connectivity map is also calculated. In this case, a (list of) map(s) of pactch size must be also provided.
   patch_size_map_names: list with strings; a python list with the names of the patch size maps created using the function patch_size, corresponding to the patch size maps to be used to calculate structural connectivity maps.
   prepare_biodim: (True/False) logical; if True, maps and input text files for running BioDIM package are prepared.
@@ -789,11 +790,16 @@ def fragment_area(input_maps, list_edge_depths,
       format_escale_name = '0000'+`meters`
       format_escale_name = format_escale_name[-4:]
       
+      if diagonal_neighbors:
+        flag_neighbors = '' # considers diagonals
+      else:
+        flag_neighbors = 'c' # considers circular moving window
+      
       # Uses a moving window to erodes habitat patches, by considering the minimum value within a window
-      grass.run_command('r.neighbors', input = i_in, output = i+"_ero_"+format_escale_name+'m', method = 'minimum', size = a, overwrite = True)#, flags = 'c')
+      grass.run_command('r.neighbors', input = i_in, output = i+"_ero_"+format_escale_name+'m', method = 'minimum', size = a, overwrite = True, flags = flag_neighbors)
       
       # This is followed by dilatating the patches again (but not the corridors), by considering the maximum value within a moving window
-      grass.run_command('r.neighbors', input=i+"_ero_"+format_escale_name+'m', output = i+"_dila_"+format_escale_name+'m', method = 'maximum', size = a, overwrite = True)#, flags = 'c')
+      grass.run_command('r.neighbors', input=i+"_ero_"+format_escale_name+'m', output = i+"_dila_"+format_escale_name+'m', method = 'maximum', size = a, overwrite = True, flags = flag_neighbors)
       
       # Taking only positive values
       expression1 = i+"_FRAG_"+format_escale_name+"m_pos = if("+i+"_dila_"+format_escale_name+'m'+" > 0, "+i+"_dila_"+format_escale_name+'m'+", null())"
@@ -826,7 +832,11 @@ def fragment_area(input_maps, list_edge_depths,
         
         # Transforms what is 1 in the binary map into the patch size
         expression3 = i+'_'+format_escale_name+'m_fragment_AreaHA = if('+i_in+' == 0, 0, '+i+'_'+format_escale_name+'m_fragment_AreaHA_aux)'
-        grass.mapcalc(expression3, overwrite = True)          
+        grass.mapcalc(expression3, overwrite = True)
+        
+      # Calculates structural connectivity
+      #if struct_connec:
+        #expression4 = i+'_'+format_escale_name+'m_structural_connectivity = 
       
       ## identificando branch tampulins e corredores
       #expression3='temp_BSSC=if(isnull('+i+"_FRAG"+format_escale_name+"m_mata_clump_AreaHA"+'),'+i_in+')'
@@ -942,7 +952,7 @@ def fragment_area(input_maps, list_edge_depths,
 #-------------------------------
 # Function percentage
 def percentage(input_maps, scale_list, method = 'average', append_name = '',
-               diagonal = False,
+               diagonal_neighbors = True, result_float = False,
                remove_trash = True, export = False, dirout = ''):
   '''
   Function percentage
@@ -956,7 +966,8 @@ def percentage(input_maps, scale_list, method = 'average', append_name = '',
   scale_list: list with numbers (float or integer); each value correponds to a size for the moving window, in meters, in which the percentage will be calculated.
   method: string; the method calculation performed inside the moving window. For percentages in general the method 'average' is used (stardard), but ir may be set to other values depending on the kind of input variable.
   append_name: string; name to be appended in the output map name. It may be used to distinguish between edge, core, and habitat percentage, for example.
-  diagonal: (True/False) logical; if True, the moving window in a square and considers diagonals of the central pixel; otherwise, the moving window is a circle (according to r.neighbors rules).
+  diagonal_neighbors: (True/False) logical; if True, the moving window in a square and considers diagonals of the central pixel; otherwise, the moving window is a circle (according to r.neighbors rules).
+  result_float: (True/False) logical; if True, percentage maps are present floating point (real) numbers; if False (default), percentage maps present integer values.
   remove_trash: (True/False) logical; if True, maps generated in the middle of the calculation are deleted; otherwise they are kept within GRASS.
   export: (True/False) logical; if True, the maps are exported from GRASS.
   dirout: string; folder where the output maps will be saved when exported from GRASS. If '', the output maps are generated but are not exported from GRASS.
@@ -992,13 +1003,17 @@ def percentage(input_maps, scale_list, method = 'average', append_name = '',
       grass.run_command('g.region', rast = in_map)
       
       # Calculate average value based on the average value (or other method of r.neighbors) of moving window
-      if diagonal:
+      if diagonal_neighbors:
         grass.run_command('r.neighbors', input = in_map, select = in_map, output = "temp_PCT", method = method, size = windowsize, overwrite = True)
       else:
         grass.run_command('r.neighbors', input = in_map, select = in_map, output = "temp_PCT", method = method, size = windowsize, overwrite = True, flags = 'c')
       
       # Multiplying by 100 to get a value between 0 and 100%
-      expression1 = outputname+' = temp_PCT * 100'
+      if result_float:
+        expression1 = outputname+' = temp_PCT * 100' # float values
+      else:
+        expression1 = outputname+' = int(temp_PCT * 100)' # integer values
+        
       grass.mapcalc(expression1, overwrite = True, quiet = True)
       
       # If export == True, export the resulting map
@@ -1008,13 +1023,13 @@ def percentage(input_maps, scale_list, method = 'average', append_name = '',
         
       # If remove_trash == True, remove the maps generated in the process
       if remove_trash:
-        grass.run_command('g.remove', type = "raster", name = 'temp_PCT', flags='f')
+        grass.run_command('g.remove', type = "raster", name = 'temp_PCT', flags = 'f')
 
 
 #-------------------------------
 # Function functional_connectivity
 def functional_connectivity(input_maps, list_gap_crossing,
-                            zero = False, diagonal = False,
+                            zero = False, diagonal = True, diagonal_neighbors = True,
                             functional_connec = False,
                             functional_area_complete = False,
                             prepare_biodim = False, calc_statistics = False, remove_trash = True,
@@ -1038,7 +1053,8 @@ def functional_connectivity(input_maps, list_gap_crossing,
   input_maps: list with strings; a python list with maps loaded in the GRASS GIS location. Must be binary class maps (e.g. maps of habitat-non habitat).
   list_gap_crossing: list with numbers; each value correpond to a distance an organism can cross in the matrix; all habitat patches whose distance is <= this gap crossing distance are considered functionally connected.
   zero: (True/False) logical; if True, non-habitat values are set to zero; otherwise, they are set as null values.
-  diagonal: (not used yet) (True/False) logical; if True, cells are clumped also in the diagonal for estimating patch size.
+  diagonal: (True/False) logical; if True, cells are clumped also in the diagonal for estimating patch size.
+  diagonal_neighbors: (True/False) logical; if True, the moving window in a square and considers diagonals of the central pixel; otherwise, the moving window is a circle (according to r.neighbors rules).
   functional_connec: (True/False) logical; if True, the functional connectivity map is calculated. If gap crossing == 0 is not present in the list of gap crossings, it is added to generate these functional connectivity maps
   functional_area_complete: (True/False) logical; if True, maps of complete functional connectivity area are also generated.
   prepare_biodim: (True/False) logical; if True, maps and input text files for running BioDIM package are prepared.
@@ -1121,8 +1137,14 @@ def functional_connectivity(input_maps, list_gap_crossing,
       format_escale_name = '0000'+`meters`
       format_escale_name = format_escale_name[-4:]
         
+      # Whether or not to consider diagonal when dilatating pixels
+      if diagonal_neighbors:
+        flags_neighbors = ''
+      else:
+        flags_neighbors = 'c'
+        
       # Uses a moving window to dilatate/enlarge habitat patches, by considering the maximum value within a window
-      grass.run_command('r.neighbors', input = i_in, output = i+"_dila_"+format_escale_name+'m_orig', method = 'maximum', size = a, overwrite = True)
+      grass.run_command('r.neighbors', input = i_in, output = i+"_dila_"+format_escale_name+'m_orig', method = 'maximum', size = a, overwrite = True, flags = flags_neighbors)
       
       # Set zero values as null
       expression1 = i+"_dila_"+format_escale_name+'m_orig_temp = if('+i+"_dila_"+format_escale_name+'m_orig == 0, null(), '+i+"_dila_"+format_escale_name+'m_orig)'
@@ -1217,7 +1239,7 @@ def functional_connectivity(input_maps, list_gap_crossing,
           grass.run_command('r.out.gdal', input = i+'_'+format_escale_name+'m_functional_connectivity', output = i+'_'+format_escale_name+'m_functional_connectivity.tif', overwrite = True)
       
       # If export_fid == True, the fragment ID map is exported in this folder
-      if export_pid == True and dirout != ''  and list_gap_cross[x] != 0:
+      if export_pid == True and dirout != '' and list_gap_cross[x] != 0:
         os.chdir(dirout)
         grass.run_command('g.region', rast = i+"_"+format_escale_name+'m_func_connect_pid')
         grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+'m_func_connect_pid', output = i+"_"+format_escale_name+'m_func_connect_pid.tif', overwrite = True)
@@ -1227,7 +1249,7 @@ def functional_connectivity(input_maps, list_gap_crossing,
           grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output = i+"_"+format_escale_name+'m_func_connect_complete_pid.tif', overwrite = True)
             
       # If calc_statistics == True, the stats of this metric are calculated and exported
-      if calc_statistics:
+      if calc_statistics and list_gap_cross[x] != 0:
         createtxt(i+"_"+format_escale_name+'m_func_connect_pid', outputfolder = dirout, filename = i+"_"+format_escale_name+'m_func_connect_AreaHA')
         # If functional_area_complete == True, these statistics are also calculated
         if functional_area_complete:          
@@ -1278,7 +1300,7 @@ def functional_connectivity(input_maps, list_gap_crossing,
 #-------------------------------
 # Function edge_core
 def edge_core(input_maps, list_edge_depths,
-              diagonal = True,
+              diagonal = True, diagonal_neighbors = True,
               calc_edge_core_area = False,
               calc_percentage = False, window_size = [], method_percentage = 'average',
               calc_statistics = False, remove_trash = True,
@@ -1294,7 +1316,8 @@ def edge_core(input_maps, list_edge_depths,
   Input:
   input_maps: list with strings; a python list with maps loaded in the GRASS GIS location. Must be binary class maps (e.g. maps of habitat-non habitat).
   list_edge_depths: list with numbers; each value correpond to an edge depth; it is used to classify pixels distant less than this depth from the edges and edge pixels.
-  diagonal: (True/False) logical; if True, neighborhood analysis for identifying edges includethe diagonal of central pixels.
+  diagonal: (True/False) logical; if True, clumps of edge and core areas are made considering the diagonal (in r.clump).
+  diagonal_nieghbors: (True/False) logical; if True, neighborhood analysis for identifying edges include the diagonal of central pixels.
   calc_edge_core_area: (True/False) logical; if True, the area of edge and core clumps, after identified, is also calculated. Patch IDs for each clump are also identified.
   calc_percentage: (True/False) logical; if True, the maps of edge and core are used to calculate the proportion of edge and core around each pixel, given a moving window size for the analysis. The percentage analysis is performed by the function percentage().
   window_size: list with numbers; each value correpond to a size for the moving window used to calculate proportion of edge and core; values are given in meters.
@@ -1383,7 +1406,7 @@ def edge_core(input_maps, list_edge_depths,
       list_meco.append(outputname_meco)
       
       # Degrading map by edge depth
-      if diagonal:
+      if diagonal_neighbors:
         grass.run_command('r.neighbors', input = i_in, output = i+"_eroED_"+format_escale_name+'m', method = 'minimum', size = size, overwrite = True)
       else:
         grass.run_command('r.neighbors', input = i_in, output = i+"_eroED_"+format_escale_name+'m', method = 'minimum', size = size, overwrite = True, flags = 'c')
@@ -1426,11 +1449,16 @@ def edge_core(input_maps, list_edge_depths,
         # Define region
         grass.run_command('g.region', rast = outputname_core)        
         
+        if diagonal:
+          flags_clump = 'd'
+        else:
+          flags_clump = ''
+        
         # core pid
         expression1 = outputname_core+'_1_null = if('+outputname_core+' >= 1, '+outputname_core+', null())'
         grass.mapcalc(expression1, overwrite = True, quiet = True)
         # clump
-        grass.run_command('r.clump', input = outputname_core+'_1_null', output = core_pid_mapname, overwrite = True, flags = 'd')
+        grass.run_command('r.clump', input = outputname_core+'_1_null', output = core_pid_mapname, overwrite = True, flags = flags_clump)
         
         # core area
         nametxtreclass = rulesreclass(core_pid_mapname, outputfolder = '.')
@@ -1441,7 +1469,7 @@ def edge_core(input_maps, list_edge_depths,
         expression1 = outputname_edge+'_1_null = if('+outputname_edge+' >= 1, '+outputname_edge+', null())'
         grass.mapcalc(expression1, overwrite = True, quiet = True)
         # clump
-        grass.run_command('r.clump', input = outputname_edge+'_1_null', output = edge_pid_mapname, overwrite = True, flags = 'd')
+        grass.run_command('r.clump', input = outputname_edge+'_1_null', output = edge_pid_mapname, overwrite = True, flags = flags_clump)
         
         # edge area
         nametxtreclass = rulesreclass(edge_pid_mapname, outputfolder = '.')
@@ -1476,10 +1504,10 @@ def edge_core(input_maps, list_edge_depths,
       if calc_percentage and len(window_size) >= 1:
         
         # edge proportion
-        percentage(input_maps = [outputname_edge], scale_list = window_size, method = method_percentage, append_name = '',
+        percentage(input_maps = [outputname_edge], scale_list = window_size, method = method_percentage, append_name = '', diagonal_neighbors = diagonal_neighbors,
                    remove_trash = remove_trash, export = export, dirout = dirout)
         # core proportion
-        percentage(input_maps = [outputname_core], scale_list = window_size, method = method_percentage, append_name = '',
+        percentage(input_maps = [outputname_core], scale_list = window_size, method = method_percentage, append_name = '', diagonal_neighbors = diagonal_neighbors,
                    remove_trash = remove_trash, export = export, dirout = dirout)           
             
       # If calc_statistics == True, the stats of this metric are calculated and exported
@@ -1648,7 +1676,8 @@ def landscape_diversity(input_maps, scale_list, method = ['simpson'], alpha = []
   r.diversity. For more information, type 'r.diversity --help'.
   To avoid problems downloading the addon, it is distributed together with the LSMetrics package.
   It produces one map of diversity for each input map, each size of the moving window (scale), each method,
-  and each alpha value in case of Renyi diversity.
+  and each alpha value in case of Renyi diversity. Diagonals around the central pixel are always considered 
+  when calculating landscape diversity (moving window is a square, not a circle).
   
   Input:
   input_maps: list with strings; each input map corresponds to a binary map (1/0 and NOT 1/null!!) that represents a certain variable.
@@ -1759,10 +1788,10 @@ def lsmetrics_run(input_maps,
                   zero_bin = True, zero_metrics = False, use_calculated_bin = False,
                   calcstats = False, prepare_biodim = False, remove_trash = True, 
                   binary = False, list_habitat_classes = [], export_binary = False,
-                  calc_patch_size = False, diagonal = False, export_patch_size = False, export_patch_id = False,
-                  calc_frag_size = False, list_edge_depth_frag = [], export_frag_size = False, export_frag_id = False,
+                  calc_patch_size = False, diagonal = True, export_patch_size = False, export_patch_id = False,
+                  calc_frag_size = False, list_edge_depth_frag = [], diagonal_neighbors = True, export_frag_size = False, export_frag_id = False,
                   struct_connec = False, export_struct_connec = False,
-                  percentage_habitat = False, list_window_size_habitat = [], method_percentage = 'average', export_percentage_habitat = False,
+                  percentage_habitat = False, list_window_size_habitat = [], result_float_percentage = False, method_percentage = 'average', export_percentage_habitat = False,
                   functional_connected_area = False, list_gap_crossing = [], export_func_con_area = False, export_func_con_pid = False,
                   functional_area_complete = False, functional_connectivity_map = False,
                   calc_edge_core = False, list_edge_depth_edgecore = [], export_edge_core = False,
@@ -1796,13 +1825,13 @@ def lsmetrics_run(input_maps,
   export_binary: (True/False) logical; if True, the binary maps created by create_binary function are exported from GRASS.
   
   calc_patch_size: (True/False) logical; if True, patch size is calculated using the patch_size function.
-  ##############################################
-  diagonal: #######################################
+  diagonal: (True/False) logical; if True, cells are clumped also in the diagonal for estimating patch size, in r.clump. The default is True.
   export_patch_size: (True/False) logical; if True, the patch size maps created by the patch_size function are exported from GRASS.
   export_patch_id: (True/False) logical; if True, the patch ID maps created by the patch_size function are exported from GRASS.
   
   calc_frag_size: (True/False) logical; if True, fragment size is calculated using the fragment_area function.
   list_edge_depth_frag: list with numbers; each value correpond to an edge depth; they are used by the fragment_area function to excludes corridors with width = 2*(edge depth) to calculate fragment size.
+  diagonal_neighbors: (True/False) logical; if True, diagonal cells are considering when compressing and dilatating patches with r.neighbors. The default is True.
   export_frag_size: (True/False) logical; if True, the fragment size maps created by the fragment_area function are exported from GRASS.
   export_frag_id: (True/False) logical; if True, the fragment ID maps created by the fragment_area function are exported from GRASS.
   
@@ -1853,7 +1882,7 @@ def lsmetrics_run(input_maps,
       raise Exeption('To calculate structural connectivity, you need to also calculate patch size.')
     
     fragment_area(input_maps = list_maps_metrics, list_edge_depths = list_edge_depth_frag,
-                  zero = zero_metrics, diagonal = diagonal,
+                  zero = zero_metrics, diagonal = diagonal, diagonal_neighbors = diagonal_neighbors,
                   struct_connec = struct_connec, patch_size_map_names = list_patch_size_area,
                   prepare_biodim = prepare_biodim, calc_statistics = calcstats, remove_trash = remove_trash,
                   prefix = output_prefix, add_counter_name = add_counter_name, 
@@ -1865,7 +1894,8 @@ def lsmetrics_run(input_maps,
     if zero_bin == False:
       raise Warning('You set the binary map to value 1-null and asked for a percentage of habitat map; this may cause problems in the output!')
     
-    percentage(input_maps = list_maps_metrics, scale_list = list_window_size_habitat, method = method_percentage, append_name = '_habitat',
+    percentage(input_maps = list_maps_metrics, scale_list = list_window_size_habitat, method = method_percentage, append_name = '_habitat', 
+               diagonal_neighbors = diagonal_neighbors, result_float = result_float_percentage,
                remove_trash = remove_trash, export = export_percentage_habitat, dirout = outputdir)
     
   # Metrics of functional connectivity
@@ -1874,7 +1904,7 @@ def lsmetrics_run(input_maps,
   if functional_connected_area or functional_connectivity_map:
     
     functional_connectivity(input_maps = list_maps_metrics, list_gap_crossing = list_gap_crossing,
-                            zero = zero_metrics, diagonal = diagonal,
+                            zero = zero_metrics, diagonal = diagonal, diagonal_neighbors = diagonal_neighbors,
                             functional_connec = functional_connectivity_map,
                             functional_area_complete = functional_area_complete,
                             prepare_biodim = prepare_biodim, calc_statistics = calcstats, remove_trash = remove_trash,
@@ -1895,7 +1925,7 @@ def lsmetrics_run(input_maps,
   if calc_edge_core:
     
     edge_core(input_maps = list_maps_metrics, list_edge_depths = list_edge_depth_edgecore,
-              diagonal = diagonal,
+              diagonal = diagonal, diagonal_neighbors = diagonal_neighbors,
               calc_edge_core_area = calc_edge_core_area,
               calc_percentage = percentage_edge_core, window_size = window_size_edge_core, 
               method_percentage = method_percentage,
@@ -1968,10 +1998,11 @@ class LSMetrics(wx.Panel):
         # Options for each metric
         
         # For multiple
-        self.zero_bin = True # whether the binary generated will be 1/0 (True) or 1/null (False)
-        self.zero_metrics = False # whether the metrics generated will have non habitat values as 0 (True) or null (False)
+        self.zero_bin = True # whether the binary generated will be 1/0 (True) or 1/null (False). Default is True.
+        self.zero_metrics = False # whether the metrics generated will have non habitat values as 0 (True) or null (False). Default is False.
         self.use_calculated_bin = False # whether binary maps generated will use be used for calculating the other metrics
-        self.diagonal = False # whether or not to clump pixels using diagonal pixels (used for many functions)
+        self.diagonal = True # whether or not to clump pixels using diagonal pixels (used for many functions). Default is True.
+        self.diagonal_neighbors = True # whether or not to analyze neighborhoods using diagonal pixels (used for many functions). Default is True.
         # For binary maps
         self.list_habitat_classes = [] # list of values that correspond to habitat
         self.export_binary = False # whether or not to export generated binary maps
@@ -1986,6 +2017,7 @@ class LSMetrics(wx.Panel):
         self.export_struct_connec = False # whether or not to export generated structural connectivity maps
         # For percentage of habitat 
         self.list_window_size_habitat = [] # list of window sizes to be considered for proportion of habitat
+        self.result_float_percentage = False # whether or not to produce float (or int if False) maps of percentage
         self.method_percentage = 'average' # method used in r.neighbors to calculate the proportion of habitat
         self.export_percentage_habitat = False # whether or not to export generated maps of proportion of habitat
         # Functional connectivity
@@ -2072,7 +2104,7 @@ class LSMetrics(wx.Panel):
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
         #self.logger = wx.TextCtrl(self, 5, '', wx.Point(200, 560), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
-        #self.logger = wx.TextCtrl(self, 5, '', wx.Point(400, 750), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
+        self.logger = wx.TextCtrl(self, 5, '', wx.Point(600, 750), wx.Size(290 + self.add_width, 150), wx.TE_MULTILINE | wx.TE_READONLY)        
         
         #---------------------------------------------#
         #-------------- RADIO BOXES ------------------#
@@ -2505,14 +2537,14 @@ class LSMetrics(wx.Panel):
                 
             # Run all metrics selected
             lsmetrics_run(input_maps = self.input_maps,
-                          outputdir = self.outputdir, output_prefix = '', add_counter_name = False,
-                          zero_bin = True, zero_metrics = False, use_calculated_bin = self.use_calculated_bin,
+                          outputdir = self.outputdir, output_prefix = self.output_prefix, add_counter_name = self.add_counter_name,
+                          zero_bin = self.zero_bin, zero_metrics = self.zero_metrics, use_calculated_bin = self.use_calculated_bin,
                           calcstats = self.calc_statistics, prepare_biodim = self.prepare_biodim, remove_trash = self.remove_trash,
                           binary = self.binary, list_habitat_classes = self.list_habitat_classes, export_binary = self.export_binary,
                           calc_patch_size = self.calc_patch_size, diagonal = self.diagonal, export_patch_size = self.export_patch_size, export_patch_id = self.export_patch_id,
-                          calc_frag_size = self.calc_frag_size, list_edge_depth_frag = self.list_edge_depth_frag, export_frag_size = self.export_frag_size, export_frag_id = self.export_frag_id,
+                          calc_frag_size = self.calc_frag_size, list_edge_depth_frag = self.list_edge_depth_frag, diagonal_neighbors = self.diagonal_neighbors, export_frag_size = self.export_frag_size, export_frag_id = self.export_frag_id,
                           struct_connec = self.struct_connec, export_struct_connec = self.export_struct_connec,
-                          percentage_habitat = self.percentage_habitat, list_window_size_habitat = self.list_window_size_habitat, method_percentage = self.method_percentage, export_percentage_habitat = self.export_percentage_habitat,
+                          percentage_habitat = self.percentage_habitat, list_window_size_habitat = self.list_window_size_habitat, result_float_percentage = self.result_float_percentage, method_percentage = self.method_percentage, export_percentage_habitat = self.export_percentage_habitat,
                           functional_connected_area = self.functional_connected_area, list_gap_crossing = self.list_gap_crossing, export_func_con_area = self.export_func_con_area, export_func_con_pid = self.export_func_con_pid,
                           functional_area_complete = self.functional_area_complete, functional_connectivity_map = self.functional_connectivity_map,
                           calc_edge_core = self.calc_edge_core, list_edge_depth_edgecore = self.list_edge_depth_edgecore, export_edge_core = self.export_edge_core,
@@ -2777,11 +2809,11 @@ class LSMetrics(wx.Panel):
         # Check Box - event 109 (check calculate proportion of edge core)
         if event.GetId() == 109:
           if int(event.Checked()) == 1:
-            self.calc_edge_core = True
+            self.percentage_edge_core = True
             self.logger.AppendText('Calculate proportion of edge/core: On\n')
             self.editname7.Enable() # Enable list of window sizes
           else:
-            self.calc_edge_core = False
+            self.percentage_edge_core = False
             self.logger.AppendText('Calculate proportion of edge/core: Off\n')
             self.editname7.Disable() # Disable list of window sizes
             

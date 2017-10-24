@@ -1,0 +1,17 @@
+OK- regra 8 sempre 
+OK (clump - neighbors - percentage)
+
+- ss/branch - entender e mandar miltinho
+
+OK- proportions - int de 0 a 100
+OK option - float
+
+OK r.out.gdal = default = int
+
+functional connectec area
+pid eh dilatado
+area eh igual a functional connected area
+
+- classificao pixel
+- gerar estatisticas
+- exportar pid
