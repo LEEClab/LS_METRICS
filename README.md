@@ -9,9 +9,10 @@ The software runs in a GRASS GIS (currently GRASS GIS 7.x) environment and uses 
 ## Download LSMetrics
 
 First [download the .zip package](https://github.com/LEEClab/LS_METRICS/archive/master.zip) or clone it into your local enviroment using `git`:
-```git
+```bash
 # Choose the directory where to clone LSMEtrics
 cd path/to/LSMetrics_dir
+
 # Clone it
 git clone https://github.com/LEEClab/LS_METRICS.git
 ```
