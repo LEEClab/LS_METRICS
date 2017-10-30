@@ -2507,7 +2507,7 @@ class LSMetrics(wx.Panel):
         if self.prepare_biodim:        
           self.map_list = grass.list_grouped ('rast') ['userbase']
         else:
-          self.map_list = grass.list_grouped ('rast') ['PERMANENT']      
+          self.map_list = grass.list_grouped ('rast') [self.current_mapset]      
       
       # RadioBox - event 92 (single/multiple maps)
       if event.GetId() == 92: 
@@ -2555,7 +2555,7 @@ class LSMetrics(wx.Panel):
               self.input_maps = grass.list_grouped ('rast', pattern=self.pattern_name) ['userbase']
               #self.output_prefix2 = 'lndscp_'              
             else:
-              self.input_maps = grass.list_grouped ('rast', pattern=self.pattern_name) ['PERMANENT']
+              self.input_maps = grass.list_grouped ('rast', pattern=self.pattern_name) [self.current_mapset]
           
           if len(self.input_maps) == 0:
             raise Exception('The input maps must be selected.')
