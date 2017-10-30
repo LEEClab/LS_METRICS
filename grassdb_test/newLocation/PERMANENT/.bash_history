@@ -316,3 +316,12 @@ g.list rast
 CLEAR
 clear
 exit
+cd Github/LS_METRICS/_LSMetrics_v1_0_0/
+ls
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python
+python
+exit

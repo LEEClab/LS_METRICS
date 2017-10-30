@@ -59,10 +59,6 @@ VERSION = 'v. 1.0.0'
 # Current script folder
 script_folder = os.getcwd()
 
-########################
-# -arrumar script R para gerar as figuras que queremos
-# como conversa o R com o grass? da pra rodar o script R em BATCH mode?
-
 #----------------------------------------------------------------------------------
 def reclass_frag_cor(mappidfrag, dirs):
   '''
@@ -400,7 +396,7 @@ def frag_scales(input_map, list_edge_depths):
     
     # Rounding to an integer number of pixels
     # If the number is even, we sum 1 to have an odd number of pixel to the moving window
-    if corridor_width_pix %2 == 0:
+    if int(corridor_width_pix) %2 == 0:
       corridor_width_pix = int(corridor_width_pix)
       corridor_width_pix = corridor_width_pix + 1
       list_edge_depths_meters.append(int(depth)) # append the edge depth to the list
@@ -1980,7 +1976,7 @@ class LSMetrics(wx.Panel):
     def __init__(self, parent, id):
         
         # Initializing GUI
-        wx.Panel.__init__(self, parent, id)
+        wx.Panel.__init__(self, parent, id)     
         
         # Takes the current mapset and looks for maps only inside it
         self.current_mapset = grass.read_command('g.mapset', flags = 'p').replace('\n','').replace('\r','')        

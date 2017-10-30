@@ -27,7 +27,7 @@ output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 # and lsmetrics_run, also
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run
 
@@ -87,7 +87,7 @@ import grass.script as grass
 output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run, patch_size
 
@@ -155,7 +155,7 @@ import grass.script as grass
 output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run, patch_size, fragment_area
 
@@ -234,7 +234,7 @@ import grass.script as grass
 output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run, percentage, get_size_pixels
 
@@ -303,7 +303,7 @@ import grass.script as grass
 output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run, functional_connectivity
 
@@ -391,7 +391,7 @@ import grass.script as grass
 output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run, dist_edge
 
@@ -471,7 +471,7 @@ import grass.script as grass
 output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run, edge_core, percentage
 
@@ -546,7 +546,7 @@ grass.run_command('g.remove', type = 'raster', pattern = '*pid', flags = 'f')
 
 
 #-------------------------------
-# Now let's test the function to diversity
+# Now let's test the function landscape_diversity
 
 python
 
@@ -558,7 +558,7 @@ import grass.script as grass
 output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run, landscape_diversity
 
@@ -609,9 +609,35 @@ lsmetrics_run(input_maps = list_of_maps,
 grass.run_command('g.remove', type = 'raster', pattern = '*diversity*', flags = 'f')
 
 
+#-------------------------------
+# Now let's test the functions  to lead with scales
 
+python
 
+# import modules
+import os
+import grass.script as grass
 
+# folder for saving outputs
+output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
+
+# Change dir
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
+os.chdir(ls_metrics_dir)
+from LSMetrics_v1_0_0 import connectivity_scales, frag_scales
+
+# Map and scales
+maps = 'SP_RioClaro_use_raster'
+scales = [100, 140, 150, 160, 170, 180]
+
+# Map resolution
+grass.raster.raster_info(maps)['ewres']
+
+# Test scales for connectivity maps
+connectivity_scales(maps, scales)
+
+# Test scales for fragmented area maps
+frag_scales(maps, scales)
 
 
 
@@ -632,7 +658,7 @@ import grass.script as grass
 output_dir = r'/home/leecb/Github/LS_METRICS/test_output'
 
 # Change dir
-ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0_stable'
+ls_metrics_dir = r'/home/leecb/Github/LS_METRICS/_LSMetrics_v1_0_0'
 os.chdir(ls_metrics_dir)
 from LSMetrics_v1_0_0 import create_binary, createtxt, create_TXTinputBIODIM, lsmetrics_run, patch_size, fragment_area
 
