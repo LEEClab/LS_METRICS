@@ -291,3 +291,28 @@ g.remove rast patt=*test* -f
 g.list rast
 clear
 exit
+cd Github/LS_METRICS/_LSMetrics_v1_0_0/
+python LSMetrics_v1_0_0.py 
+g.list rast
+g.list rast
+g.remove rast patt=*conne* -f
+g.remove rast patt=*conne* -f
+g.list rast
+clear
+ls
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+python LSMetrics_v1_0_0.py 
+exit
+g.list rast
+g.remove rast patt=*HABMAT* -f
+g.remove rast patt=*HABMAT* -f
+g.list rast
+CLEAR
+clear
+exit

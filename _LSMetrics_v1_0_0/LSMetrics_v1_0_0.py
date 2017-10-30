@@ -704,7 +704,8 @@ def fragment_area(input_maps, list_edge_depths,
                   zero = False, diagonal = True, diagonal_neighbors = True,
                   struct_connec = False, patch_size_map_names = [],
                   prepare_biodim = False, calc_statistics = False, remove_trash = True,
-                  prefix = '', add_counter_name = False, export = False, export_fid = False, dirout = ''):
+                  prefix = '', add_counter_name = False, 
+                  export = False, export_fid = False, export_struct_connec = True, dirout = ''):
   # check that - other parameters used list_meco, check_func_edge,
   '''
   Function fragment_area
@@ -835,8 +836,9 @@ def fragment_area(input_maps, list_edge_depths,
         grass.mapcalc(expression3, overwrite = True)
         
       # Calculates structural connectivity
-      #if struct_connec:
-        #expression4 = i+'_'+format_escale_name+'m_structural_connectivity = 
+      if struct_connec:
+        expression4 = i+'_'+format_escale_name+'m_structural_connectivity = '+patch_size_map_names[z]+' - '+i+'_'+format_escale_name+'m_fragment_AreaHA'
+        grass.mapcalc(expression4, overwrite = True)
       
       ## identificando branch tampulins e corredores
       #expression3='temp_BSSC=if(isnull('+i+"_FRAG"+format_escale_name+"m_mata_clump_AreaHA"+'),'+i_in+')'
@@ -893,12 +895,16 @@ def fragment_area(input_maps, list_edge_depths,
       if export == True and dirout != '':
         os.chdir(dirout)
         grass.run_command('g.region', rast = i+'_'+format_escale_name+'m_fragment_AreaHA')
-        grass.run_command('r.out.gdal', input = i+'_'+format_escale_name+'m_fragment_AreaHA', out = i+'_'+format_escale_name+'m_fragment_AreaHA.tif', overwrite = True)
+        grass.run_command('r.out.gdal', input = i+'_'+format_escale_name+'m_fragment_AreaHA', output = i+'_'+format_escale_name+'m_fragment_AreaHA.tif', overwrite = True)
       # If export_fid == True, the fragment ID map is exported in this folder
       if export_fid == True and dirout != '':
         os.chdir(dirout)
         grass.run_command('g.region', rast = i+"_"+format_escale_name+"m_fid")
-        grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+"m_fid", out = i+"_"+format_escale_name+'m_fid.tif', overwrite = True)
+        grass.run_command('r.out.gdal', input = i+"_"+format_escale_name+"m_fid", output = i+"_"+format_escale_name+'m_fid.tif', overwrite = True)
+      if struct_connec and export_struct_connec:
+        os.chdir(dirout)
+        grass.run_command('g.region', rast = i+'_'+format_escale_name+'m_structural_connectivity')
+        grass.run_command('r.out.gdal', input = i+'_'+format_escale_name+'m_structural_connectivity', output = i+'_'+format_escale_name+'m_structural_connectivity.tif', overwrite = True)        
       
       # If calc_statistics == True, the stats of this metric are calculated and exported
       if calc_statistics:      
@@ -1174,36 +1180,55 @@ def functional_connectivity(input_maps, list_gap_crossing,
       if zero == False:        
         nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_pid', outputfolder = '.')
         grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_pid', output = i+"_"+format_escale_name+'m_func_connect_AreaHA', rules = nametxtreclass, overwrite = True)
+        
+        # If functional_area_complete == True, the area of complete maps (dilatated maps, considering the matrix pixels) is also calculated - their area is equal to the functionally connected area maps
+        if functional_area_complete and list_gap_cross[x] != 0:       
+          grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output=i+"_"+format_escale_name+'m_func_connect_complete_AreaHA', rules=nametxtreclass, overwrite = True)
+          
+        # Remove reclass file
         os.remove(nametxtreclass)
-      else: # If zero == True (non-habitat cells are considered as zeros)
+        
+      # If zero == True (non-habitat cells are considered as zeros)
+      else: 
         nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_pid', outputfolder = '.')
         grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_pid', output = i+"_"+format_escale_name+'m_func_connect_AreaHA_aux', rules = nametxtreclass, overwrite = True)
-        os.remove(nametxtreclass)
         
         # Transforms what is 1 in the binary map into the patch size
         expression4 = i+"_"+format_escale_name+'m_func_connect_AreaHA = if('+i_in+' == 0, 0, '+i+'_'+format_escale_name+'m_fragment_AreaHA_aux)'
         grass.mapcalc(expression4, overwrite = True)
+        
+        # If functional_area_complete == True, the area of complete maps (dilatated maps, considering the matrix pixels) is also calculated - their area is equal to the functionally connected area maps
+        if functional_area_complete and list_gap_cross[x] != 0:        
+          grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output=i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux', rules=nametxtreclass, overwrite = True)
+      
+          # Transforms what is 1 in the binary map into the patch size
+          expression5 = i+"_"+format_escale_name+'m_func_connect_complete_AreaHA = if('+i_in+' == 0, 0, '+i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux)'
+          grass.mapcalc(expression5, overwrite = True)
+        
+        # Remove reclass file
+        os.remove(nametxtreclass)
+        
       
       # Save the name of the functional area map in case the gap crossing == 0:
       if list_gap_cross[x] == 0:
         name_map_gap_crossing_0 = i+"_"+format_escale_name+'m_func_connect_AreaHA'
         
-      # If functional_area_complete == True, the area of complete maps (dilatated maps, considering the matrix pixels) is also calculated
-      if functional_area_complete and list_gap_cross[x] != 0:
+      ## If functional_area_complete == True, the area of complete maps (dilatated maps, considering the matrix pixels) is also calculated
+      #if functional_area_complete and list_gap_cross[x] != 0:
         
-        # If zero == False (non-habitat cells are considered null)
-        if zero == False:          
-          nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_complete_pid', '.')
-          grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output=i+"_"+format_escale_name+'m_func_connect_complete_AreaHA', rules=nametxtreclass, overwrite = True)
-          os.remove(nametxtreclass)
-        else: # If zero == True (non-habitat cells are considered as zeros)
-          nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_complete_pid', '.')
-          grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output=i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux', rules=nametxtreclass, overwrite = True)
-          os.remove(nametxtreclass)
+        ## If zero == False (non-habitat cells are considered null)
+        #if zero == False:          
+          #nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_complete_pid', '.')
+          #grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output=i+"_"+format_escale_name+'m_func_connect_complete_AreaHA', rules=nametxtreclass, overwrite = True)
+          #os.remove(nametxtreclass)
+        #else: # If zero == True (non-habitat cells are considered as zeros)
+          #nametxtreclass = rulesreclass(i+"_"+format_escale_name+'m_func_connect_complete_pid', '.')
+          #grass.run_command('r.reclass', input = i+"_"+format_escale_name+'m_func_connect_complete_pid', output=i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux', rules=nametxtreclass, overwrite = True)
+          #os.remove(nametxtreclass)
       
-          # Transforms what is 1 in the binary map into the patch size
-          expression5 = i+"_"+format_escale_name+'m_func_connect_complete_AreaHA = if('+i_in+' == 0, 0, '+i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux)'
-          grass.mapcalc(expression5, overwrite = True)      
+          ## Transforms what is 1 in the binary map into the patch size
+          #expression5 = i+"_"+format_escale_name+'m_func_connect_complete_AreaHA = if('+i_in+' == 0, 0, '+i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux)'
+          #grass.mapcalc(expression5, overwrite = True)      
       
       # If functional_connect == True, calculate map of functional connectivity
       # This map equals functional_area - funcional_area(gap_crossing == 0)
@@ -1266,6 +1291,10 @@ def functional_connectivity(input_maps, list_gap_crossing,
           txts.append(i+"_"+format_escale_name+'m_func_connect_AreaHA_aux')
           if functional_area_complete and list_gap_cross[x] != 0:
             txts.append(i+"_"+format_escale_name+'m_func_connect_complete_AreaHA_aux')
+        if functional_connec and a == list_dilatate_pixels[-1]:
+          format_escale_name = '000000'
+          format_escale_name = format_escale_name[-4:]          
+          txts = txts + [i+"_"+format_escale_name+'m_func_connect_AreaHA', i+"_"+format_escale_name+'m_func_connect_pid']
         # Remove maps from GRASS GIS location     
         for txt in txts:
           grass.run_command('g.remove', type='raster', name=txt, flags='f')
@@ -1886,7 +1915,8 @@ def lsmetrics_run(input_maps,
                   struct_connec = struct_connec, patch_size_map_names = list_patch_size_area,
                   prepare_biodim = prepare_biodim, calc_statistics = calcstats, remove_trash = remove_trash,
                   prefix = output_prefix, add_counter_name = add_counter_name, 
-                  export = export_frag_size, export_fid = export_frag_id, dirout = outputdir)
+                  export = export_frag_size, export_fid = export_frag_id, export_struct_connec = export_struct_connec,
+                  dirout = outputdir)
   
   # Percentage of habitat
   if percentage_habitat:
