@@ -1997,12 +1997,12 @@ class LSMetrics(wx.Panel):
         # prepare_biodim: If True, the package is run to prepare input maps and files to run BioDIM individual-based model package
         self.prepare_biodim = False
         # calc_statistics: If True, statistics files of the maps are saved while creating them
-        self.calc_statistics = True
+        self.calc_statistics = False
         # calc_multiple: True in case of running metrics for multiple maps, and False if running for only one map
         self.calc_multiple = False
         
         ######## set false later
-        self.export_pid_general = True
+        self.export_pid_general = False
         
         # Metrics to be calculated
         self.binary = False # Option: Transform input maps into binary class maps
