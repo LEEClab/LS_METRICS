@@ -2002,7 +2002,7 @@ class LSMetrics(wx.Panel):
         self.calc_multiple = False
         
         ######## set false later
-        self.export_pid_general = False
+        self.export_pid_general = True
         
         # Metrics to be calculated
         self.binary = False # Option: Transform input maps into binary class maps
@@ -2354,6 +2354,18 @@ class LSMetrics(wx.Panel):
                      
         # Static text
         self.SelectMetrics12 = wx.StaticText(self, -1, "Metrics of edge:", wx.Point(20, 550))
+        
+        #------------
+        # Maps of distance from edges
+        
+        # Check box - event 108 (check calculate distance from edges)
+        self.insure16 = wx.CheckBox(self, 108, 'Map of distance from edges', wx.Point(150 + self.add_width, 548))
+        wx.EVT_CHECKBOX(self, 108, self.EvtCheckBox)
+        
+        # Check Box - event 57 (export maps of distance from edges)
+        self.insure16_5 = wx.CheckBox(self, 57, "", wx.Point(475 + self.add_width, 548))
+        wx.EVT_CHECKBOX(self, 57, self.EvtCheckBox)
+        self.insure16_5.Disable()        
                 
         #------------
         # Maps of edge/core/matrix
@@ -2361,9 +2373,9 @@ class LSMetrics(wx.Panel):
         # Static text
         self.SelectMetrics13 = wx.StaticText(self, -1, "Classify edge/core/matrix:", wx.Point(20, 580))
                                 
-        # Check box - event 108 (check classify edge/core/matrix)
-        self.insure16 = wx.CheckBox(self, 108, '', wx.Point(150 + self.add_width, 578))
-        wx.EVT_CHECKBOX(self, 108, self.EvtCheckBox)         
+        # Check box - event 109 (check classify edge/core/matrix)
+        self.insure17 = wx.CheckBox(self, 109, '', wx.Point(150 + self.add_width, 578))
+        wx.EVT_CHECKBOX(self, 109, self.EvtCheckBox)         
         
         # Static text
         self.SelectMetrics14 = wx.StaticText(self, -1, "Edge depths (m):", wx.Point(185 + self.add_width, 580))
@@ -2374,10 +2386,10 @@ class LSMetrics(wx.Panel):
         wx.EVT_TEXT(self, 195, self.EvtText)
         self.editname6.Disable()       
                         
-        # Check Box - event 57 (export maps of edge/core/matrix)
-        self.insure17 = wx.CheckBox(self, 57, "", wx.Point(475 + self.add_width, 578))
-        wx.EVT_CHECKBOX(self, 57, self.EvtCheckBox)
-        self.insure17.Disable()
+        # Check Box - event 58 (export maps of edge/core/matrix)
+        self.insure18 = wx.CheckBox(self, 58, "", wx.Point(475 + self.add_width, 578))
+        wx.EVT_CHECKBOX(self, 58, self.EvtCheckBox)
+        self.insure18.Disable()
         
         #------------
         # Proportion of edge/core
@@ -2385,10 +2397,10 @@ class LSMetrics(wx.Panel):
         # Static text
         self.SelectMetrics15 = wx.StaticText(self, -1, "Proportion of edge/core:", wx.Point(20, 610))
                                 
-        # Check box - event 109 (check calculate proportion of edge/core)
-        self.insure18 = wx.CheckBox(self, 109, '', wx.Point(140 + self.add_width, 608))
-        wx.EVT_CHECKBOX(self, 109, self.EvtCheckBox)
-        self.insure18.Disable()
+        # Check box - event 110 (check calculate proportion of edge/core)
+        self.insure19 = wx.CheckBox(self, 110, '', wx.Point(140 + self.add_width, 608))
+        wx.EVT_CHECKBOX(self, 110, self.EvtCheckBox)
+        self.insure19.Disable()
                         
         # Static text
         self.SelectMetrics16 = wx.StaticText(self, -1, "Window size (m):", wx.Point(165 + self.add_width, 610))
@@ -2402,10 +2414,10 @@ class LSMetrics(wx.Panel):
         #------------
         # Area of edge/core clumps
               
-        # Check Box - event 110 (check calculate area of edge/core clumps)
-        self.insure19 = wx.CheckBox(self, 110, 'Calculate area of edge/core clumps?', wx.Point(20, 640))
-        wx.EVT_CHECKBOX(self, 110, self.EvtCheckBox)
-        self.insure19.Disable()
+        # Check Box - event 111 (check calculate area of edge/core clumps)
+        self.insure20 = wx.CheckBox(self, 111, 'Calculate area of edge/core clumps?', wx.Point(20, 640))
+        wx.EVT_CHECKBOX(self, 111, self.EvtCheckBox)
+        self.insure20.Disable()
         
         #---------------------------------------------#
         #------------ DIVERSITY METRICS --------------#
@@ -2420,9 +2432,9 @@ class LSMetrics(wx.Panel):
         # Static text
         self.SelectMetrics16 = wx.StaticText(self, -1, "Landscape diversity:", wx.Point(20, 670))
                                         
-        # Check box - event 111 (check calculate diversity metrics)
-        self.insure20 = wx.CheckBox(self, 111, '', wx.Point(135 + self.add_width, 668))
-        wx.EVT_CHECKBOX(self, 111, self.EvtCheckBox)         
+        # Check box - event 112 (check calculate diversity metrics)
+        self.insure21 = wx.CheckBox(self, 112, '', wx.Point(135 + self.add_width, 668))
+        wx.EVT_CHECKBOX(self, 112, self.EvtCheckBox)         
                 
         # Static text
         self.SelectMetrics17 = wx.StaticText(self, -1, "Window size (m):", wx.Point(165 + self.add_width, 670))
@@ -2433,28 +2445,28 @@ class LSMetrics(wx.Panel):
         wx.EVT_TEXT(self, 197, self.EvtText)
         self.editname8.Disable()       
         
-        # Check Box - event 58 (export maps of diversity)
-        self.insure21 = wx.CheckBox(self, 58, "", wx.Point(475 + self.add_width, 668))
-        wx.EVT_CHECKBOX(self, 58, self.EvtCheckBox)
-        self.insure21.Disable()
+        # Check Box - event 59 (export maps of diversity)
+        self.insure22 = wx.CheckBox(self, 59, "", wx.Point(475 + self.add_width, 668))
+        wx.EVT_CHECKBOX(self, 59, self.EvtCheckBox)
+        self.insure22.Disable()
         
         # Static text
         self.SelectMetrics18 = wx.StaticText(self, -1, "Index:", wx.Point(20, 700))
         
         # Check box - event 130 (check method for diversity metrics - Shannon)
-        self.insure22 = wx.CheckBox(self, 130, 'Shannon', wx.Point(60 + self.add_width, 699))
+        self.insure23 = wx.CheckBox(self, 130, 'Shannon', wx.Point(60 + self.add_width, 699))
         wx.EVT_CHECKBOX(self, 130, self.EvtCheckBox)
         
         # Check box - event 131 (check method for diversity metrics - Simpson)
-        self.insure23 = wx.CheckBox(self, 131, 'Simpson', wx.Point(150 + self.add_width, 699))
+        self.insure24 = wx.CheckBox(self, 131, 'Simpson', wx.Point(150 + self.add_width, 699))
         wx.EVT_CHECKBOX(self, 131, self.EvtCheckBox)        
 
         # Check box - event 132 (check method for diversity metrics - Pielou)
-        self.insure24 = wx.CheckBox(self, 132, 'Pielou', wx.Point(240 + self.add_width, 699))
+        self.insure25 = wx.CheckBox(self, 132, 'Pielou', wx.Point(240 + self.add_width, 699))
         wx.EVT_CHECKBOX(self, 132, self.EvtCheckBox)
 
         # Check box - event 133 (check method for diversity metrics - Renyi)
-        self.insure25 = wx.CheckBox(self, 133, 'Renyi', wx.Point(330 + self.add_width, 699))
+        self.insure26 = wx.CheckBox(self, 133, 'Renyi', wx.Point(330 + self.add_width, 699))
         wx.EVT_CHECKBOX(self, 133, self.EvtCheckBox)
         
         # Static text
@@ -2815,25 +2827,36 @@ class LSMetrics(wx.Panel):
             self.functional_area_complete = False
             self.logger.AppendText('Calculate complete functional connected area: Off\n')                
         
-        # Check Box - event 108 (check classify edge/core/matrix)
+        # Check box - event 108 (check calculate distance from edges)
         if event.GetId() == 108:
+          if int(event.Checked()) == 1:
+            self.calc_edge_dist = True
+            self.logger.AppendText('Calculate distance from edges: On\n')
+            self.insure16_5.Enable() # Enable possibility to export maps of distance from edges
+          else:
+            self.calc_edge_dist = False
+            self.logger.AppendText('Calculate distance from edges: Off\n')
+            self.insure16_5.Disable() # Disable possibility to export maps of distance from edges
+        
+        # Check Box - event 109 (check classify edge/core/matrix)
+        if event.GetId() == 109:
           if int(event.Checked()) == 1:
             self.calc_edge_core = True
             self.logger.AppendText('Classify edge/core/matrix: On\n')
             self.editname6.Enable() # Enable list of edge depths for maps of edge/core/matrix
-            self.insure17.Enable() # Enable possibility to export maps of edge/core/matrix
-            self.insure18.Enable() # Enable possibility to calculate proportion of edge/core
-            self.insure19.Enable() # Enable possibility to calculate area of edge/core clumps
+            self.insure18.Enable() # Enable possibility to export maps of edge/core/matrix
+            self.insure19.Enable() # Enable possibility to calculate proportion of edge/core
+            self.insure20.Enable() # Enable possibility to calculate area of edge/core clumps
           else:
             self.calc_edge_core = False
             self.logger.AppendText('Classify edge/core/matrix: Off\n')
             self.editname6.Disable() # Disable list of edge depths for maps of edge/core/matrix
-            self.insure17.Disable() # Disable possibility to export maps of edge/core/matrix
-            self.insure18.Disable() # Disable possibility to calculate proportion of edge/core
-            self.insure19.Disable() # Disable possibility to calculate area of edge/core clumps
+            self.insure18.Disable() # Disable possibility to export maps of edge/core/matrix
+            self.insure19.Disable() # Disable possibility to calculate proportion of edge/core
+            self.insure20.Disable() # Disable possibility to calculate area of edge/core clumps
             
-        # Check Box - event 109 (check calculate proportion of edge core)
-        if event.GetId() == 109:
+        # Check Box - event 110 (check calculate proportion of edge core)
+        if event.GetId() == 110:
           if int(event.Checked()) == 1:
             self.percentage_edge_core = True
             self.logger.AppendText('Calculate proportion of edge/core: On\n')
@@ -2843,8 +2866,8 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('Calculate proportion of edge/core: Off\n')
             self.editname7.Disable() # Disable list of window sizes
             
-        # Check Box - event 110 (check calculate area of edge/core clumps)
-        if event.GetId() == 110:
+        # Check Box - event 111 (check calculate area of edge/core clumps)
+        if event.GetId() == 111:
           if int(event.Checked()) == 1:
             self.calc_edge_core_area = True
             self.logger.AppendText('Calculate area of edge/core clumps: On\n')
@@ -2852,26 +2875,26 @@ class LSMetrics(wx.Panel):
             self.calc_edge_core_area = False
             self.logger.AppendText('Calculate area of edge/core clumps: Off\n')
             
-        # Check Box - event 111 (check calculate diversity metrics)
-        if event.GetId() == 111:
+        # Check Box - event 112 (check calculate diversity metrics)
+        if event.GetId() == 112:
           if int(event.Checked()) == 1:
             self.calc_diversity = True
             self.logger.AppendText('Calculate landscape diversity: On\n')
             self.editname8.Enable() # Enable list of window sizes
-            self.insure21.Enable() # Enable possibility to export maps of diversity
-            self.insure22.Enable() # Enable possibility to use method Shannon
-            self.insure23.Enable() # Enable possibility to use method Simpson
-            self.insure24.Enable() # Enable possibility to use method Pielou
-            self.insure25.Enable() # Enable possibility to use method Renyi            
+            self.insure22.Enable() # Enable possibility to export maps of diversity
+            self.insure23.Enable() # Enable possibility to use method Shannon
+            self.insure24.Enable() # Enable possibility to use method Simpson
+            self.insure25.Enable() # Enable possibility to use method Pielou
+            self.insure26.Enable() # Enable possibility to use method Renyi            
           else:
             self.calc_diversity = False
             self.logger.AppendText('Calculate landscape diversity: Off\n')        
             self.editname8.Disable() # Disable list of window sizes
-            self.insure21.Disable() # Disable possibility to export maps of diversity
-            self.insure22.Disable() # Disable possibility to use method Shannon
-            self.insure23.Disable() # Disable possibility to use method Simpson
-            self.insure24.Disable() # Disable possibility to use method Pielou
-            self.insure25.Disable() # Disable possibility to use method Renyi
+            self.insure22.Disable() # Disable possibility to export maps of diversity
+            self.insure23.Disable() # Disable possibility to use method Shannon
+            self.insure24.Disable() # Disable possibility to use method Simpson
+            self.insure25.Disable() # Disable possibility to use method Pielou
+            self.insure26.Disable() # Disable possibility to use method Renyi
         
         # Check boxes for indexes of landscape diversity
         
@@ -2969,9 +2992,18 @@ class LSMetrics(wx.Panel):
           else:
             self.export_func_con_area = False
             self.logger.AppendText('Export map of functionally connected area: Off\n')
-            
-        # Check Box - event 57 (export maps of edge/core/matrix)
+        
+        # Check Box - event 57 (export maps of distance from edges)
         if event.GetId() == 57:
+          if int(event.Checked()) == 1:
+            self.export_edge_dist = True
+            self.logger.AppendText('Export map of distance from edges: On\n')
+          else:
+            self.export_edge_dist = False
+            self.logger.AppendText('Export map of distance from edges: Off\n')        
+            
+        # Check Box - event 58 (export maps of edge/core/matrix)
+        if event.GetId() == 58:
           if int(event.Checked()) == 1:
             self.export_edge_core = True
             self.logger.AppendText('Export map of edge/core/matrix: On\n')
@@ -2979,8 +3011,8 @@ class LSMetrics(wx.Panel):
             self.export_edge_core = False
             self.logger.AppendText('Export map of edge/core/matrix: Off\n')
             
-        # Check Box - event 58 (export maps of diversity)
-        if event.GetId() == 58:
+        # Check Box - event 59 (export maps of diversity)
+        if event.GetId() == 59:
           if int(event.Checked()) == 1:
             self.export_diversity = True
             self.logger.AppendText('Export map of landscape diversity: On\n')
