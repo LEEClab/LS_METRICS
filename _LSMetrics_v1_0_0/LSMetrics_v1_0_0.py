@@ -1659,6 +1659,9 @@ def dist_edge(input_maps,
     expression3 = i+'_edge_dist = '+i+'_invert_matrix_pos_eucldist - '+i+'_invert_habitat_neg_eucldist'
     grass.mapcalc(expression3, overwrite = True, quiet = True)
     
+    # Define colors for the map
+    grass.run_command('r.colors', map = i+'_edge_dist', color = 'difference')
+    
     # If biodim_prepare == True,  the list of map names is updated
     if prepare_biodim:
       list_maps_dist.append(i+'_edge_dist')
