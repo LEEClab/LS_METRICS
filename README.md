@@ -33,17 +33,17 @@ distances are measured in meters, so that areas and distances are calculated in 
 Now, it is time to use the app itself. Use the GRASS terminal (the black screen) to start LSMetrics. First change to LSMetrics directory and run it using python:
 ```bash
 # Change to code directory
-cd LS_METRICS/_LSMetrics_v1_0_stable
+cd "LS_METRICS/_LSMetrics_v1_0_0"
 
 # Run LSMetrics
-python LSMetrics_v1_0.py
+python LSMetrics_v1_0_0.py
 ```
 
 Note: on MS Windows, you may have to change to the partition where the code is located before changing to its directory. E.g.:
 
 ```bash
 D:
-cd "D:/LS_CORRIDORS/_LS_Corridors_v1_0_stable"
+cd "D:/LS_METRICS/_LSMetrics_v1_0_0"
 ```
 
 <img src="images/LSMetrics_GUI.png"/>
@@ -56,8 +56,8 @@ LSMetrics is being developed at the Spatial Ecology and Conservation Lab (LEEC),
 
 If you have questions, contact us at one of the e-mails below. You can also contact us if you have any errors running LSMetrics (or you can open an issue here on GitHub). Take a look also on LS Connectivity, a software developed in LEEC for doing several connectivity metrics. 
 
-- Bernardo Niebuhr <bernardo_brandaum@yahoo.com.br>
-- John W. Ribeiro <jw.ribeiro.rc@gmail.com>
-- Milton C. Ribeiro <mcr@rc.unesp.br>
+- Bernardo Niebuhr <<bernardo_brandaum@yahoo.com.br>>
+- John W. Ribeiro <<jw.ribeiro.rc@gmail.com>>
+- Milton C. Ribeiro <<mcr@rc.unesp.br>>
 
 
