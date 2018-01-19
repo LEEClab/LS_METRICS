@@ -1,10 +1,7 @@
 # Landscape Metrics (LSMetrics)
 
-This repository is being used to develop and share LSMetrics package.
-
-LSMetrics is a software designed to calculate ecologically based landscape metrics and landscape statistics, as well as generate maps of landscape connectivity.
-Also, the software is designed to prepare maps and enviroment for running BioDIM, an individual-based model of animal movement in fragmented landscapes.
-The software runs in a GRASS GIS (currently GRASS GIS 7.x) environment and uses raster images as input. Here's how to get started with LSMetrics in four steps:
+This repository is being used to develop and share LSMetrics package. LSMetrics is a software designed to calculate ecologically based landscape metrics and landscape statistics, as well as generate maps of landscape connectivity.
+Also, the software is designed to prepare maps and enviroment for running BioDIM, an individual-based model of animal movement in fragmented landscapes. The software runs in a GRASS GIS (currently GRASS GIS 7.x) environment and uses raster images as input. Here's how to get started with LSMetrics in four steps:
 
 # Tutorial: take a look in LSMetrics [Wiki!](https://github.com/LEEClab/LS_METRICS/wiki)
 
