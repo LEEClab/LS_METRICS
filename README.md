@@ -18,4 +18,4 @@ If you have questions, contact us at one of the e-mails below. You can also cont
 
 <img src="images/LSMetrics_logo_low_res.png"/>
 
-<img src="images/LSapps_bg.png.png"/>
+<img src="images/LSapps_bg.png"/>
