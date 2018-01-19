@@ -6,7 +6,7 @@ LSMetrics is a software designed to calculate ecologically based landscape metri
 Also, the software is designed to prepare maps and enviroment for running BioDIM, an individual-based model of animal movement in fragmented landscapes.
 The software runs in a GRASS GIS (currently GRASS GIS 7.x) environment and uses raster images as input. Here's how to get started with LSMetrics in four steps:
 
-# Tutorial: You can take a look in LSMetrics [Wiki!](https://github.com/LEEClab/LS_METRICS/wiki).
+# Tutorial: take a look in LSMetrics [Wiki!](https://github.com/LEEClab/LS_METRICS/wiki)
 
 If you have questions, contact us at one of the e-mails below. You can also contact us if you have any errors running LSMetrics (or you can open an issue here on GitHub). Take a look also on LS Connectivity, a software developed in LEEC for doing several connectivity metrics. 
 
