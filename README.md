@@ -8,11 +8,12 @@ The software runs in a GRASS GIS (currently GRASS GIS 7.x) environment and uses 
 
 # Tutorial: take a look in LSMetrics [Wiki!](https://github.com/LEEClab/LS_METRICS/wiki)
 
-If you have questions, contact us at one of the e-mails below. You can also contact us if you have any errors running LSMetrics (or you can open an issue here on GitHub). Take a look also on LS Connectivity, a software developed in LEEC for doing several connectivity metrics. 
+If you have questions, contact us at one of the e-mails below. You can also contact us if you have any errors running LSMetrics (or you can open an issue here on GitHub).
 
 - Bernardo Niebuhr <<bernardo_brandaum@yahoo.com.br>>
 - John W. Ribeiro <<jw.ribeiro.rc@gmail.com>>
 - Milton C. Ribeiro <<mcr@rc.unesp.br>>
+- Renata L. Muylaert <<renatamuy@gmail.com>>
 
 
 
