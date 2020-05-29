@@ -20,7 +20,7 @@ def number_patches_to_polygon(vector, raster_id_list, col_names_list):
 	# selection, region, mask and area
 	for i in cats:
 		# information
-		print("Complete: " + str(round((int(i)/len(cats)*100), 2)) + "%")
+		print("### Complete " + i.replace("\r","") + " of " + str(len(cats)) + " features ###")
 		# select feature
 		gs.run_command("v.extract", flags = "t", input = vector, output = "vector_cat", where = "cat = " + i, overwrite = True, quiet = True)
 		# define region to feature
