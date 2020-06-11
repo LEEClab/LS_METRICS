@@ -1,0 +1,37 @@
+To do list:
+
+Lansdcape metrics to implement:
+1. Implementar a funcao de classificacao de elementos da paisagem 
+(borda, interior, matriz, corredor, stepping stone, habitat branch, ...)
+Caiu fora.
+Usa o GUIDOS
+
+Coding:
+-1: Como o GRASS funciona? Live no GeoCast
+
+0. Agora temos tb a adaptacao para python3, for conta das novas versoes do GRASS que só suportam ela. 
+Mau ja deu uma olhada, podemos discutir isso e pensar em o que manter/modificar.
+
+1. Dividir as funcoes core e a interface em scripts separados
+(tirar a interface da jogada, manter so o core de funcoes de analise)
+
+2. Transform LSMetrics functions into GRASS addon
+
+3. Nao sei se isso é importante, mas nao temos um unit test formal. Nao sei se precisamos. 
+Eu prefiro ter um script de teste que podemos rodar e ver os outputs de cada metrica ao inves 
+de um unit test mais formal.
+Ideia: ter um banco de dados para Rio Claro todas as metricas geradas (rasters)
+E comparar pixel a pixel
+1. primeiro ter algo so dizendo se cada funcao passou ou nao
+2. termos onde foi o problema, se a funcao nao passou
+
+4. Zonal statistics (manter somente como codigo/addon)
+  4.1 Metricas para um vetor
+  4.2 Metricas para cada feature de um vetor
+
+4. Mexer na interface grafica para ela ficar mais funcional e facil de se modificar se adicionarmos mais metricas 
+(se Kyle manjar, isso seria um enorme ajuda)
+Ideia: uma vez que o codigo estiver funcional, fazer uma interface usando PyQt
+
+Passos 0 a 3:
+jul a dez 2020
