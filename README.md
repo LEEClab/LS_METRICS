@@ -17,3 +17,5 @@ If you have questions, contact us at one of the e-mails below. You can also cont
 <img src="images/LSMetrics_logo_low_res.png"/>
 
 <img src="images/LSapps_bg.png"/>
+
+[![Star History Chart](https://api.star-history.com/svg?repos=LEEClab/LS_METRICS&type=Date)](https://star-history.com/#LEEClab/LS_METRICS&Date)
