@@ -1,0 +1,9 @@
+Thu May 29 14:08:11 2025
+SP_RioClaro_use_raster_HABMAT
+PERMANENT
+HP
+raster
+
+
+gerado por r.mapcalc
+if(SP_RioClaro_use_raster == 6, 1, 0)

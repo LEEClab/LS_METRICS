@@ -1,0 +1,10 @@
+Thu May 29 14:13:45 2025
+APA_Sao_Joao_RJ_cut_SIRGAS_UTM23S_HABMAT_FRAG_0060m_pos
+PERMANENT
+HP
+raster
+
+
+gerado por r.mapcalc
+if(APA_Sao_Joao_RJ_cut_SIRGAS_UTM23S_HABMAT_dila_0060m > 0, 
+APA_Sao_Joao_RJ_cut_SIRGAS_UTM23S_HABMAT_dila_0060m, null())

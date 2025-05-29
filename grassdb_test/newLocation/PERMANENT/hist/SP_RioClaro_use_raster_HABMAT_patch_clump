@@ -1,0 +1,10 @@
+Thu May 29 14:08:22 2025
+SP_RioClaro_use_raster_HABMAT_patch_clump
+PERMANENT
+HP
+raster
+SP_RioClaro_use_raster_HABMAT
+
+gerado por r.clump
+r.clump --overwrite -d input="SP_RioClaro_use_raster_HABMAT" output=\
+"SP_RioClaro_use_raster_HABMAT_patch_clump" threshold=0 minsize=1

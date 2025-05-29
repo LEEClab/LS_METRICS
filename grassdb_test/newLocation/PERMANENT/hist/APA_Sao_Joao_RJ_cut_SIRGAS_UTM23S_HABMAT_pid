@@ -1,0 +1,10 @@
+Thu May 29 14:13:38 2025
+APA_Sao_Joao_RJ_cut_SIRGAS_UTM23S_HABMAT_pid
+PERMANENT
+HP
+raster
+
+
+gerado por r.mapcalc
+if(APA_Sao_Joao_RJ_cut_SIRGAS_UTM23S_HABMAT_patch_clump_hab > 0, 
+APA_Sao_Joao_RJ_cut_SIRGAS_UTM23S_HABMAT_patch_clump_hab, null())
