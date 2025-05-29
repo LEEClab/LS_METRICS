@@ -1,0 +1,10 @@
+Wed Apr 09 14:09:58 2025
+cenario_4_cut_teste_tif_HABMAT_pid
+PERMANENT
+TPDI
+raster
+
+
+gerado por r.mapcalc
+if(cenario_4_cut_teste_tif_HABMAT_patch_clump_hab > 0, 
+cenario_4_cut_teste_tif_HABMAT_patch_clump_hab, null())

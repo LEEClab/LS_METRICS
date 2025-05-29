@@ -1,0 +1,9 @@
+Wed Apr 09 14:10:11 2025
+cenario_4_cut_teste_tif_HABMAT_habitat_pct_50m
+PERMANENT
+TPDI
+raster
+
+
+gerado por r.mapcalc
+int(temp_PCT * 100)

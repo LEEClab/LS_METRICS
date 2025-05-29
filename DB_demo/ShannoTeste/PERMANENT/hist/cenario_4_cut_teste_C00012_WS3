@@ -1,0 +1,10 @@
+Wed Apr 16 23:53:58 2025
+cenario_4_cut_teste_C00012_WS3
+PERMANENT
+TPDI
+raster
+
+
+gerado por r.neighbors
+r.neighbors --overwrite -c input="cenario_4_cut_teste_C00012" output\
+="cenario_4_cut_teste_C00012_WS3" method="sum" size=3

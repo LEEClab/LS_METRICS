@@ -1,0 +1,10 @@
+Wed Apr 09 14:09:57 2025
+cenario_4_cut_teste_tif_HABMAT_patch_clump
+PERMANENT
+TPDI
+raster
+cenario_4_cut_teste_tif_HABMAT
+
+gerado por r.clump
+r.clump --overwrite -d input="cenario_4_cut_teste_tif_HABMAT" output\
+="cenario_4_cut_teste_tif_HABMAT_patch_clump" threshold=0 minsize=1

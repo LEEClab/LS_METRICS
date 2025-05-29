@@ -1,0 +1,12 @@
+1)
+Praticamente todas as junções de strings que utilizavam + tive usar a função ".format()"
+------------------------------------------------------------------------------------------
+2)
+
+x
+-----------------------------------------------------------
+Mudança no evento Checkbox:
+Todas as checagens de checkbox agora estão
+Assim; de event.Checked() para event.IsChecked()
+
+Functionally connected area

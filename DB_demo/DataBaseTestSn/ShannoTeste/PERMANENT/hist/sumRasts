@@ -1,0 +1,14 @@
+Wed Apr 16 23:29:05 2025
+sumRasts
+PERMANENT
+TPDI
+raster
+
+
+gerado por r.series
+r.series --overwrite input="cenario_4_cut_teste_C00000_WS3,cenario_4\
+_cut_teste_C00001_WS3,cenario_4_cut_teste_C00002_WS3,cenario_4_cut_t\
+este_C00003_WS3,cenario_4_cut_teste_C00004_WS3,cenario_4_cut_teste_C\
+00005_WS3,cenario_4_cut_teste_C00006_WS3,cenario_4_cut_teste_C00007_\
+WS3,cenario_4_cut_teste_C00008_WS3,cenario_4_cut_teste_C00012_WS3" o\
+utput="sumRasts" method="sum"

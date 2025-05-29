@@ -1,0 +1,10 @@
+Thu Apr 10 13:14:05 2025
+cenario_4_cut_teste
+PERMANENT
+TPDI
+raster
+
+
+gerado por r.in.gdal
+r.in.gdal input="cenario_4_cut_teste.tif" output="cenario_4_cut_test\
+e" memory=300 offset=0 num_digits=0

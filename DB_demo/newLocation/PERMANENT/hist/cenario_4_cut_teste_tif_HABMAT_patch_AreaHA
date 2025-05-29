@@ -1,0 +1,11 @@
+Wed Apr 09 14:09:58 2025
+cenario_4_cut_teste_tif_HABMAT_patch_AreaHA
+PERMANENT
+TPDI
+reclass
+Reclassified map based on:
+  Map [cenario_4_cut_teste_tif_HABMAT_pid] in mapset [PERMANENT]
+gerado por r.reclass
+r.reclass --overwrite input="cenario_4_cut_teste_tif_HABMAT_pid" out\
+put="cenario_4_cut_teste_tif_HABMAT_patch_AreaHA" rules="cenario_4_c\
+ut_teste_tif_HABMAT_pid_rules.txt"
