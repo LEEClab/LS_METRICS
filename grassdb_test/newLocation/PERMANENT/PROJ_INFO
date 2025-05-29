@@ -1,7 +1,0 @@
-name: SIRGAS_2000_UTM_Zone_23S
-datum: sirgas2000
-ellps: grs80
-proj: utm
-zone: 23
-south: defined
-no_defs: defined
