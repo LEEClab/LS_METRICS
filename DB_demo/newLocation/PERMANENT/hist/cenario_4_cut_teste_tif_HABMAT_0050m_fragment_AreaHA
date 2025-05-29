@@ -1,0 +1,11 @@
+Thu May 29 13:14:02 2025
+cenario_4_cut_teste_tif_HABMAT_0050m_fragment_AreaHA
+PERMANENT
+HP
+reclass
+Reclassified map based on:
+  Map [cenario_4_cut_teste_tif_HABMAT_0050m_fid] in mapset [PERMANENT]
+gerado por r.reclass
+r.reclass --overwrite input="cenario_4_cut_teste_tif_HABMAT_0050m_fi\
+d" output="cenario_4_cut_teste_tif_HABMAT_0050m_fragment_AreaHA" rul\
+es="cenario_4_cut_teste_tif_HABMAT_0050m_fid_rules.txt"

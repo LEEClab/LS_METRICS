@@ -1,0 +1,9 @@
+Thu May 29 14:20:42 2025
+cenario_4_cut_teste_tif_HABMAT
+PERMANENT
+HP
+raster
+
+
+gerado por r.mapcalc
+if(cenario_4_cut_teste_tif == 6, 1, 0)

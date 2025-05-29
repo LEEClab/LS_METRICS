@@ -1,0 +1,12 @@
+Wed Apr 09 14:10:17 2025
+cenario_4_cut_teste_tif_HABMAT_0050m_func_connect_complete_AreaHA
+PERMANENT
+TPDI
+reclass
+Reclassified map based on:
+  Map [cenario_4_cut_teste_tif_HABMAT_0050m_func_connect_complete_pid] in mapset [PERMANENT]
+gerado por r.reclass
+r.reclass --overwrite input="cenario_4_cut_teste_tif_HABMAT_0050m_fu\
+nc_connect_complete_pid" output="cenario_4_cut_teste_tif_HABMAT_0050\
+m_func_connect_complete_AreaHA" rules="cenario_4_cut_teste_tif_HABMA\
+T_0050m_func_connect_pid_rules.txt"

@@ -1,0 +1,9 @@
+Wed Apr 09 14:10:33 2025
+cenario_4_cut_teste_tif_HABMAT_CORE_0050m
+PERMANENT
+TPDI
+raster
+
+
+gerado por r.mapcalc
+if(cenario_4_cut_teste_tif_HABMAT_EDGE_0050m_temp2 == 2, 1, 0)

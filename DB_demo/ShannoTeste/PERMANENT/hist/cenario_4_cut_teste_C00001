@@ -1,0 +1,9 @@
+Wed Apr 16 23:53:51 2025
+cenario_4_cut_teste_C00001
+PERMANENT
+TPDI
+raster
+
+
+gerado por r.mapcalc
+if(cenario_4_cut_teste == 1, 1, 0)

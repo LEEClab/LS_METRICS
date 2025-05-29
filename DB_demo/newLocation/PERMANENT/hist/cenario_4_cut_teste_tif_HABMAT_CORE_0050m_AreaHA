@@ -1,0 +1,11 @@
+Wed Apr 09 14:10:35 2025
+cenario_4_cut_teste_tif_HABMAT_CORE_0050m_AreaHA
+PERMANENT
+TPDI
+reclass
+Reclassified map based on:
+  Map [cenario_4_cut_teste_tif_HABMAT_CORE_0050m_pid] in mapset [PERMANENT]
+gerado por r.reclass
+r.reclass --overwrite input="cenario_4_cut_teste_tif_HABMAT_CORE_005\
+0m_pid" output="cenario_4_cut_teste_tif_HABMAT_CORE_0050m_AreaHA" ru\
+les="cenario_4_cut_teste_tif_HABMAT_CORE_0050m_pid_rules.txt"

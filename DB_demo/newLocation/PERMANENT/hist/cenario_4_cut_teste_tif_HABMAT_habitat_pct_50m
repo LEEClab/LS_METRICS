@@ -1,0 +1,9 @@
+Thu May 29 13:14:08 2025
+cenario_4_cut_teste_tif_HABMAT_habitat_pct_50m
+PERMANENT
+HP
+raster
+
+
+gerado por r.mapcalc
+int(temp_PCT * 100)

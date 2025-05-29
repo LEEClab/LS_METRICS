@@ -1,0 +1,9 @@
+Thu Apr 10 12:21:09 2025
+forests
+PERMANENT
+TPDI
+raster
+
+
+gerado por r.mapcalc
+if(cenario_4_cut_teste_tif@PERMANENT == 1, 1, 0)
