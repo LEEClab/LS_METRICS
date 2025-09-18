@@ -1,5 +1,6 @@
 # Landscape Metrics (LSMetrics)
-<img src="images/LSMetrics_logo_low_res.png"/>  
+
+<img src="images/LSMetrics_logo.png" alt="LSMetrics Logo"/> 
 
 This repository hosts the development and distribution of **LSMetrics**, a software package designed to calculate ecologically based landscape metrics, generate landscape connectivity maps, and prepare input for BioDIM, an individual-based model of animal movement in fragmented landscapes.  
 
