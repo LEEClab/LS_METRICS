@@ -2182,7 +2182,7 @@ class LSMetrics(wx.Panel):
         self.editname2 = wx.TextCtrl(self, 191, '', wx.Point(300 + self.add_width, 248), wx.Size(120,-1))
         #wx.EVT_TEXT(self, 191, self.EvtText)
         self.Bind( wx.EVT_TEXT,  self.EvtText, id=191)
-        self.editname2.Disable()
+        
 
         # Static text
         self.export_text1 = wx.StaticText(self, -1, "Export?", wx.Point(460 + self.add_width, 215))
