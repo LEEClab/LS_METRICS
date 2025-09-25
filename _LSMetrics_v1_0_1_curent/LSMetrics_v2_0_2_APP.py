@@ -2271,6 +2271,7 @@ class LSMetrics(wx.Panel):
 
         #------------
         # Proportion of habitat
+        #ss
 
         # Static text
         self.SelectMetrics7 = wx.StaticText(self, -1, "% Habitat :", wx.Point(20, 430))
