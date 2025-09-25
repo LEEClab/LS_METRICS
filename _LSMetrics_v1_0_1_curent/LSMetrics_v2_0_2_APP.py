@@ -1032,6 +1032,7 @@ def percentage(input_maps, scale_list, method = 'average', append_name = '',
       # If remove_trash == True, remove the maps generated in the process
       if remove_trash:
         grass.run_command('g.remove', type = "raster", name = 'temp_PCT', flags = 'f')
+  print("Mapa usado para calcular PCT¨------------------",input_maps)
 
 
 #-------------------------------
@@ -2109,7 +2110,7 @@ class LSMetrics(wx.Panel):
         # RadioBox - event 92 (single/multiple)
         # Calculate metrics for a single or multiple maps?
         self.single_multiple_maps = ['Single', 'Multiple']
-        rb1 = wx.RadioBox(self, 92, "Single or multiple maps?", wx.Point(20, 117), wx.DefaultSize,
+        rb1 = wx.RadioBox(self, 92, "Single/multiple maps?", wx.Point(20, 117), wx.DefaultSize,
                           self.single_multiple_maps, 2, wx.RA_SPECIFY_ROWS)
         #wx.EVT_RADIOBOX(self, 92, )
         self.Bind(wx.EVT_RADIOBOX, self.EvtRadioBox, id=92)
@@ -2233,7 +2234,7 @@ class LSMetrics(wx.Panel):
         self.insure6 = wx.CheckBox(self, 102, '', wx.Point(135 + self.add_width, 368))
         #wx.EVT_CHECKBOX(self, 102, self.EvtCheckBox)
         self.Bind( wx.EVT_CHECKBOX,  self.EvtCheckBox, id=102)
-
+        self.insure6.Disable()
         # Static text
         self.SelectMetrics5 = wx.StaticText(self, -1, "Edge depths (m):", wx.Point(165 + self.add_width, 370))
 
@@ -2254,7 +2255,7 @@ class LSMetrics(wx.Panel):
         # Structural connectivity
 
         # Static text
-        self.SelectMetrics6 = wx.StaticText(self, -1, "Structural connectivity:", wx.Point(20, 400))
+        self.SelectMetrics6 = wx.StaticText(self, -1, "Struct. Conn", wx.Point(20, 400))
 
         # Check box - event 103 (check calculate structural connectivity)
         self.insure8 = wx.CheckBox(self, 103, '', wx.Point(135 + self.add_width, 398))
@@ -2270,14 +2271,16 @@ class LSMetrics(wx.Panel):
 
         #------------
         # Proportion of habitat
+        #ss
 
         # Static text
-        self.SelectMetrics7 = wx.StaticText(self, -1, "Proportion of habitat:", wx.Point(20, 430))
+        self.SelectMetrics7 = wx.StaticText(self, -1, "% Habitat :", wx.Point(20, 430))
 
         # Check box - event 104 (check calculate proportion of habitat)
         self.insure10 = wx.CheckBox(self, 104, '', wx.Point(135 + self.add_width, 428))
         #wx.EVT_CHECKBOX(self, 104, self.EvtCheckBox)
         self.Bind( wx.EVT_CHECKBOX,  self.EvtCheckBox, id=104)
+        self.insure10.Disable()
 
         # Static text
         self.SelectMetrics8 = wx.StaticText(self, -1, "Window size (m):", wx.Point(165 + self.add_width, 430))
@@ -2764,10 +2767,15 @@ class LSMetrics(wx.Panel):
             self.logger.AppendText('Calculate patch size: On\n')
             self.insure5.Enable() # Enable possibility to export patch size maps
             #self.insure3.Enable() # Enable possibility to use generated binary maps for other metrics
+            self.insure6.Enable()
+            self.insure10.Enable() # Enable possibility to calculate proportion of habitat
+
           else:
             self.calc_patch_size = False
             self.logger.AppendText('Calculate patch size: Off\n')
             self.insure5.Disable() # Disable possibility to export patch size maps
+            self.insure6.Disable()
+            self.insure10.Disable()
 
           # If both patch size and frag size are checked, we may calculate structural connectivity
           if self.calc_frag_size and self.calc_patch_size:
