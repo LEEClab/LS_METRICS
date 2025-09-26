@@ -1539,6 +1539,8 @@ def edge_core(input_maps, list_edge_depths,
         percentage(input_maps = [outputname_edge], scale_list = window_size, method = method_percentage, append_name = '', diagonal_neighbors = diagonal_neighbors,
                    remove_trash = remove_trash, export = export, dirout = dirout)
         # core proportion
+
+
         percentage(input_maps = [outputname_core], scale_list = window_size, method = method_percentage, append_name = '', diagonal_neighbors = diagonal_neighbors,
                    remove_trash = remove_trash, export = export, dirout = dirout)
 
@@ -1886,7 +1888,6 @@ def lsmetrics_run(input_maps,
 
   # Percentage of habitat
   if percentage_habitat:
-
     if zero_bin == False:
       raise Warning('You set the binary map to value 1-null and asked for a percentage of habitat map; this may cause problems in the output!')
 
@@ -2198,7 +2199,7 @@ class LSMetrics(wx.Panel):
         self.insure3 = wx.CheckBox(self, 71, 'Use binary maps to calculate other metrics?', wx.Point(20, 280))
         #wx.EVT_CHECKBOX(self, 71, self.EvtCheckBox)
         self.Bind( wx.EVT_CHECKBOX,  self.EvtCheckBox, id=71)
-        self.insure3.Disable()
+
 
         #---------------------------------------------#
         #-------- STRUCTURAL CONNECTIVITY ------------#
@@ -2217,6 +2218,8 @@ class LSMetrics(wx.Panel):
         self.insure4 = wx.CheckBox(self, 101, '', wx.Point(135 + self.add_width, 338))
         #wx.EVT_CHECKBOX(self, 101, self.EvtCheckBox)
         self.Bind( wx.EVT_CHECKBOX,  self.EvtCheckBox, id=101)
+        self.insure4.Disable()
+
 
         # Check Box - event 52 (export patch size maps)
         self.insure5 = wx.CheckBox(self, 52, "", wx.Point(475 + self.add_width, 338))
@@ -2756,9 +2759,11 @@ class LSMetrics(wx.Panel):
           if int(event.IsChecked()) == 1:
             self.use_calculated_bin = True
             self.logger.AppendText('Use binary maps for calculating other landscape metrics: On\n')
+            self.insure4.Enable() # Enable possibility to calculate patch size
           else:
             self.use_calculated_bin = False
             self.logger.AppendText('Use binary maps for calculating other landscape metrics: Off\n')
+            self.insure4.Disable() # Disable possibility to calculate patch size
 
         # Check Box - event 101 (check calculate patch size)
         if event.GetId() == 101:
