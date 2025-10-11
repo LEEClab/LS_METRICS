@@ -684,8 +684,10 @@ def patch_size(input_maps,
         txts = [i+"_patch_clump", i+"_patch_clump_hab"]
       # Remove maps from GRASS GIS location
       for txt in txts:
-        grass.run_command('g.remove', type="raster", name=txt, flags='f')
-
+        try:
+          grass.run_command('g.remove', type="raster", name=txt, flags='f')
+        except:
+          pass
     # Update counter of the map number
     cont += 1
 
@@ -921,7 +923,10 @@ def fragment_area(input_maps, list_edge_depths,
           txts = ["{}_ero_{}{}".format(i,format_escale_name,'m'), "{}_dila_{}{}".format(i,format_escale_name,'m'), "{}_FRAG_{}{}".format(i,format_escale_name,"m_pos"), "{}_FRAG_{}{}".format(i,format_escale_name,"m_pos_habitat"), 'MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_reclass','MapaBinario_ABCD1_pid_reclass_sttepings2', 'temp_BSSC','MapaBinario','A','MapaBinario_A','MapaBinario_AB','MapaBinario_ABC','MapaBinario_ABCD','MapaBinario_ABCD1','MapaBinario_ABCD1_pid','MapaBinario_ABCD1_pid_mode',"{}_FRAG{}{}".format(i,meters,'m_mata_clump_pid_cross_corredor'),'MapaBinario_ABCD1_pid_reclass_sttepings']
         # Remove maps from GRASS GIS location
         for txt in txts:
-          grass.run_command('g.remove', type="raster", name=txt, flags='f')
+          try:
+            grass.run_command('g.remove', type="raster", name=txt, flags='f')
+          except:
+            pass
 
       # Update counter columns (edge depths)
       x = x + 1
@@ -1031,7 +1036,10 @@ def percentage(input_maps, scale_list, method = 'average', append_name = '',
 
       # If remove_trash == True, remove the maps generated in the process
       if remove_trash:
-        grass.run_command('g.remove', type = "raster", name = 'temp_PCT', flags = 'f')
+        try: 
+          grass.run_command('g.remove', type = "raster", name = 'temp_PCT', flags = 'f')
+        except:
+          pass
   print("Mapa usado para calcular PCT¨------------------",input_maps)
 
 
@@ -1300,7 +1308,10 @@ def functional_connectivity(input_maps, list_gap_crossing,
           txts = txts + [i+"_"+format_escale_name+'m_func_connect_AreaHA', i+"_"+format_escale_name+'m_func_connect_pid']
         # Remove maps from GRASS GIS location
         for txt in txts:
-          grass.run_command('g.remove', type='raster', name=txt, flags='f')
+          try:
+            grass.run_command('g.remove', type='raster', name=txt, flags='f')
+          except:
+            pass
 
       # Update counter columns (gap crossing values)
       x = x + 1
@@ -1560,8 +1571,10 @@ def edge_core(input_maps, list_edge_depths,
         txts = [i+"_eroED_"+format_escale_name+'m', outputs, outputs2]
         if calc_edge_core_area:
           txts = txts + [outputname_core+'_1_null', outputname_edge+'_1_null']
-        grass.run_command('g.remove', type = 'raster', name = ','.join(str(e) for e in txts), flags = 'f')
-
+        try:
+          grass.run_command('g.remove', type = 'raster', name = ','.join(str(e) for e in txts), flags = 'f')
+        except:
+          pass
       # Update counter for edge depths
       cont_scale +=1
 
@@ -1688,8 +1701,10 @@ def dist_edge(input_maps,
         txts = txts + [i+'_invert_habitat_neg_eucldist_aux', i+'_invert_habitat_neg_eucldist_positive_vals']
       # Remove maps from GRASS GIS location
       for txt in txts:
-        grass.run_command('g.remove', type = "raster", name = txt, flags = 'f')
-
+        try:
+          grass.run_command('g.remove', type = "raster", name = txt, flags = 'f')
+        except:
+          pass
     # Update counter of the map number
     cont += 1
 

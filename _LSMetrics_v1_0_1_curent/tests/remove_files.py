@@ -1,6 +1,6 @@
 import grass.script as grass
 
-port = grass.list_grouped ('rast', pattern = '*HABMAT*') ['PERMANENT']
+port = grass.list_grouped ('rast', pattern = '*sufixo*') ['PERMANENT']
 #print(port)
 
 for i in port:
